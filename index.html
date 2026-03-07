@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minecraft Stick Fighters</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#111;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden;font-family:'Courier New',monospace}
+canvas{display:block;image-rendering:pixelated;border:2px solid #333}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// ===== SETUP =====
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const W=960,H=540;
+canvas.width=W;canvas.height=H;
+
+// ===== SAVE DATA =====
+let saveData={unlocked:['steve','alex','creeper','enderman'],storyProgress:0,wins:0};
+try{const s=localStorage.getItem('mcfighters');if(s)saveData=JSON.parse(s)}catch(e){}
+function save(){try{localStorage.setItem('mcfighters',JSON.stringify(saveData))}catch(e){}}
+
+// ===== INPUT =====
+const keys={};
+document.addEventListener('keydown',e=>{keys[e.code]=true;e.preventDefault()});
+document.addEventListener('keyup',e=>{keys[e.code]=false});
+
+// ===== SOUND =====
+let audioCtx;
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)()}
+function playSound(freq,dur,type='square',vol=0.15){
+  if(!audioCtx)return;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.type=type;o.frequency.value=freq;
+  g.gain.setValueAtTime(vol,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
+  o.connect(g);g.connect(audioCtx.destination);
+  o.start();o.stop(audioCtx.currentTime+dur);
+}
+function sfxHit(){playSound(200,0.1,'sawtooth',0.2)}
+function sfxKO(){playSound(100,0.5,'sawtooth',0.3);setTimeout(()=>playSound(80,0.5,'sawtooth',0.2),200)}
+function sfxJump(){playSound(400,0.1,'sine',0.1)}
+function sfxItem(){playSound(800,0.15,'sine',0.15);setTimeout(()=>playSound(1000,0.15,'sine',0.15),100)}
+function sfxSelect(){playSound(600,0.08,'square',0.1)}
+function sfxMenu(){playSound(440,0.05,'square',0.08)}
+
+// ===== PARTICLES =====
+let particles=[];
+function spawnParticles(x,y,color,count=8,speed=3){
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2;
+    particles.push({x,y,vx:Math.cos(a)*speed*(0.5+Math.random()),vy:Math.sin(a)*speed*(0.5+Math.random()),life:30+Math.random()*20,maxLife:50,color,size:2+Math.random()*3});
+  }
+}
+function updateParticles(){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.1;p.life--;
+    if(p.life<=0)particles.splice(i,1);
+  }
+}
+function drawParticles(){
+  particles.forEach(p=>{
+    ctx.globalAlpha=p.life/p.maxLife;
+    ctx.fillStyle=p.color;
+    ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);
+  });
+  ctx.globalAlpha=1;
+}
+
+// ===== SCREEN SHAKE =====
+let shakeAmount=0,shakeTime=0;
+function shake(amount){shakeAmount=amount;shakeTime=10}
+
+// ===== CHARACTER DEFINITIONS =====
+const CHAR_DEFS={
+  steve:{name:'Steve',color:'#4A90D9',weaponColor:'#5DE8E0',speed:4,jumpForce:12,weight:1,
+    weapon:'Diamond Sword',desc:'Balanced fighter',
+    attacks:{
+      neutral:{dmg:8,kb:3,range:45,startup:3,active:4,recover:8,name:'Slash'},
+      forward:{dmg:12,kb:5,range:55,startup:5,active:5,recover:12,name:'Thrust'},
+      up:{dmg:10,kb:7,range:40,startup:4,active:4,recover:10,name:'Uppercut Slash'},
+      down:{dmg:14,kb:4,range:50,startup:8,active:6,recover:14,name:'Ground Slam'},
+      airNeutral:{dmg:7,kb:2,range:40,startup:3,active:5,recover:6,name:'Air Slash'},
+      airForward:{dmg:11,kb:6,range:50,startup:4,active:4,recover:10,name:'Meteor Slash'},
+      airUp:{dmg:9,kb:8,range:40,startup:3,active:4,recover:8,name:'Sky Slash'},
+      airDown:{dmg:15,kb:9,range:35,startup:6,active:4,recover:12,name:'Dive Slash'},
+      special:{dmg:20,kb:10,range:60,startup:12,active:6,recover:18,name:'Charged Slash'}
+    }
+  },
+  alex:{name:'Alex',color:'#E8943A',weaponColor:'#5DE8E0',speed:5.5,jumpForce:13,weight:0.85,
+    weapon:'Diamond Axe',desc:'Fast & agile',
+    attacks:{
+      neutral:{dmg:6,kb:2,range:40,startup:2,active:3,recover:6,name:'Quick Chop'},
+      forward:{dmg:10,kb:4,range:50,startup:4,active:4,recover:10,name:'Spinning Axe'},
+      up:{dmg:9,kb:6,range:38,startup:3,active:4,recover:8,name:'Axe Uppercut'},
+      down:{dmg:11,kb:3,range:45,startup:6,active:5,recover:12,name:'Axe Slam'},
+      airNeutral:{dmg:5,kb:2,range:38,startup:2,active:4,recover:5,name:'Air Chop'},
+      airForward:{dmg:9,kb:5,range:48,startup:3,active:4,recover:8,name:'Dive Axe'},
+      airUp:{dmg:8,kb:7,range:36,startup:3,active:3,recover:7,name:'Sky Axe'},
+      airDown:{dmg:13,kb:8,range:32,startup:5,active:4,recover:10,name:'Axe Drop'},
+      special:{dmg:16,kb:8,range:55,startup:10,active:5,recover:15,name:'Berserker Swing'}
+    }
+  },
+  creeper:{name:'Creeper',color:'#50C878',weaponColor:'#FF4444',speed:3,jumpForce:10,weight:1.3,
+    weapon:'TNT',desc:'Slow but explosive',
+    attacks:{
+      neutral:{dmg:10,kb:4,range:50,startup:5,active:6,recover:10,name:'Small Blast'},
+      forward:{dmg:14,kb:6,range:60,startup:7,active:5,recover:14,name:'TNT Toss'},
+      up:{dmg:12,kb:8,range:45,startup:6,active:5,recover:12,name:'Firework'},
+      down:{dmg:18,kb:5,range:55,startup:10,active:8,recover:16,name:'Ground Boom'},
+      airNeutral:{dmg:9,kb:3,range:48,startup:4,active:5,recover:8,name:'Air Blast'},
+      airForward:{dmg:13,kb:7,range:55,startup:6,active:5,recover:12,name:'TNT Drop'},
+      airUp:{dmg:11,kb:9,range:42,startup:5,active:5,recover:10,name:'Rocket'},
+      airDown:{dmg:20,kb:10,range:40,startup:8,active:6,recover:14,name:'Carpet Bomb'},
+      special:{dmg:30,kb:15,range:70,startup:20,active:8,recover:24,name:'Self-Destruct',selfDmg:15}
+    }
+  },
+  enderman:{name:'Enderman',color:'#9B59B6',weaponColor:'#FF69FF',speed:5,jumpForce:14,weight:0.9,
+    weapon:'Ender Pearl',desc:'Tricky teleporter',
+    attacks:{
+      neutral:{dmg:7,kb:3,range:42,startup:3,active:4,recover:7,name:'Void Strike'},
+      forward:{dmg:11,kb:5,range:48,startup:4,active:4,recover:10,name:'Block Throw'},
+      up:{dmg:9,kb:7,range:40,startup:4,active:4,recover:9,name:'Teleport Up'},
+      down:{dmg:13,kb:4,range:46,startup:7,active:5,recover:13,name:'Void Slam'},
+      airNeutral:{dmg:6,kb:2,range:40,startup:3,active:4,recover:6,name:'Phase Strike'},
+      airForward:{dmg:10,kb:6,range:46,startup:4,active:4,recover:9,name:'Warp Kick'},
+      airUp:{dmg:8,kb:8,range:38,startup:3,active:4,recover:8,name:'Blink Up'},
+      airDown:{dmg:14,kb:9,range:34,startup:5,active:4,recover:11,name:'Ender Drop'},
+      special:{dmg:16,kb:7,range:200,startup:15,active:3,recover:20,name:'Teleport Strike',teleport:true}
+    }
+  },
+  skeleton:{name:'Skeleton',color:'#BDC3C7',weaponColor:'#5DE8E0',speed:4,jumpForce:11,weight:0.8,
+    weapon:'Diamond Bow',desc:'Ranged sniper',locked:true,
+    attacks:{
+      neutral:{dmg:6,kb:2,range:35,startup:3,active:3,recover:7,name:'Quick Shot'},
+      forward:{dmg:10,kb:5,range:200,startup:8,active:3,recover:14,name:'Power Shot',projectile:true},
+      up:{dmg:8,kb:6,range:120,startup:6,active:4,recover:10,name:'Sky Shot',projectile:true},
+      down:{dmg:5,kb:2,range:150,startup:4,active:3,recover:8,name:'Leg Shot',projectile:true},
+      airNeutral:{dmg:5,kb:2,range:30,startup:3,active:3,recover:5,name:'Bow Bash'},
+      airForward:{dmg:9,kb:5,range:180,startup:7,active:3,recover:12,name:'Air Shot',projectile:true},
+      airUp:{dmg:7,kb:7,range:100,startup:5,active:3,recover:9,name:'Rain Arrow',projectile:true},
+      airDown:{dmg:12,kb:8,range:30,startup:5,active:4,recover:10,name:'Drop Kick'},
+      special:{dmg:18,kb:8,range:250,startup:16,active:5,recover:20,name:'Multishot',projectile:true}
+    }
+  },
+  blaze:{name:'Blaze',color:'#F39C12',weaponColor:'#FF6600',speed:4.5,jumpForce:12,weight:0.75,
+    weapon:'Fire Rod',desc:'Aerial fire mage',locked:true,
+    attacks:{
+      neutral:{dmg:7,kb:3,range:45,startup:3,active:5,recover:8,name:'Fire Swipe'},
+      forward:{dmg:11,kb:5,range:150,startup:6,active:4,recover:12,name:'Fire Charge',projectile:true},
+      up:{dmg:9,kb:7,range:50,startup:4,active:5,recover:9,name:'Flame Burst'},
+      down:{dmg:13,kb:4,range:55,startup:8,active:6,recover:14,name:'Lava Pool'},
+      airNeutral:{dmg:6,kb:2,range:42,startup:3,active:4,recover:6,name:'Flame Spin'},
+      airForward:{dmg:10,kb:6,range:140,startup:5,active:4,recover:10,name:'Air Fireball',projectile:true},
+      airUp:{dmg:8,kb:8,range:45,startup:4,active:4,recover:8,name:'Fire Jet'},
+      airDown:{dmg:15,kb:9,range:38,startup:6,active:5,recover:12,name:'Meteor'},
+      special:{dmg:22,kb:10,range:180,startup:14,active:8,recover:20,name:'Blaze Barrage',projectile:true}
+    }
+  }
+};
+
+// ===== STAGE DEFINITIONS =====
+const STAGE_DEFS=[
+  {name:'Plains',bg:'#87CEEB',groundColor:'#5B8731',platforms:[
+    {x:80,y:H-60,w:800,h:40,color:'#6B9B3A'},
+    {x:200,y:H-160,w:150,h:15,color:'#8B6914'},
+    {x:610,y:H-160,w:150,h:15,color:'#8B6914'},
+    {x:380,y:H-250,w:200,h:15,color:'#8B6914'}
+  ],deathY:H+100,trees:[{x:120,h:80},{x:820,h:70}],
+   bgElements:[{type:'cloud',x:100,y:60},{type:'cloud',x:400,y:40},{type:'cloud',x:700,y:80},{type:'sun',x:820,y:60}]},
+  {name:'Nether Fortress',bg:'#330000',groundColor:'#4A1A1A',platforms:[
+    {x:60,y:H-80,w:250,h:30,color:'#722F37'},
+    {x:370,y:H-80,w:220,h:30,color:'#722F37'},
+    {x:650,y:H-80,w:250,h:30,color:'#722F37'},
+    {x:160,y:H-180,w:180,h:15,color:'#5C2626'},
+    {x:560,y:H-180,w:180,h:15,color:'#5C2626'},
+    {x:350,y:H-280,w:260,h:15,color:'#5C2626'}
+  ],deathY:H+100,lava:true,
+   bgElements:[{type:'lava',y:H-20},{type:'ghast',x:150,y:100},{type:'ghast',x:750,y:150}]},
+  {name:'The End',bg:'#0D0015',groundColor:'#D4CC8E',platforms:[
+    {x:150,y:H-100,w:200,h:25,color:'#D4CC8E'},
+    {x:450,y:H-100,w:200,h:25,color:'#D4CC8E'},
+    {x:280,y:H-200,w:180,h:15,color:'#C4BC7E'},
+    {x:520,y:H-200,w:140,h:15,color:'#C4BC7E'},
+    {x:350,y:H-310,w:260,h:15,color:'#C4BC7E'}
+  ],deathY:H+100,
+   bgElements:[{type:'stars'},{type:'dragon',x:480,y:80},{type:'endCrystal',x:380,y:H-340},{type:'endCrystal',x:610,y:H-340}]}
+];
+
+// ===== ITEM DEFINITIONS =====
+const ITEM_DEFS=[
+  {name:'Golden Apple',color:'#FFD700',effect:'heal',value:25,icon:'apple'},
+  {name:'Steak',color:'#8B4513',effect:'heal',value:15,icon:'steak'},
+  {name:'Speed Potion',color:'#00BFFF',effect:'speed',value:1.5,duration:300,icon:'potion'},
+  {name:'Strength Potion',color:'#FF4500',effect:'strength',value:1.5,duration:300,icon:'potion'},
+  {name:'Ender Pearl',color:'#9B59B6',effect:'teleport',icon:'pearl'},
+  {name:'TNT',color:'#FF0000',effect:'explosive',value:20,icon:'tnt'},
+  {name:'Shield',color:'#888',effect:'shield',duration:240,icon:'shield'}
+];
+
+// ===== PROJECTILE CLASS =====
+let projectiles=[];
+class Projectile{
+  constructor(x,y,vx,vy,dmg,kb,owner,color){
+    this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.dmg=dmg;this.kb=kb;this.owner=owner;this.color=color;this.life=90;this.size=6;
+  }
+  update(){this.x+=this.vx;this.y+=this.vy;this.vy+=0.1;this.life--}
+  draw(){
+    ctx.fillStyle=this.color;
+    ctx.fillRect(this.x-this.size/2,this.y-this.size/2,this.size,this.size);
+    ctx.fillStyle='rgba(255,255,200,0.5)';
+    ctx.fillRect(this.x-this.size/2-this.vx,this.y-this.size/2-this.vy,this.size,this.size);
+  }
+}
+
+// ===== FIGHTER CLASS =====
+class Fighter{
+  constructor(charId,x,facing,playerNum){
+    const def=CHAR_DEFS[charId];
+    this.id=charId;this.def=def;this.x=x;this.y=H-200;this.vx=0;this.vy=0;
+    this.facing=facing;this.playerNum=playerNum;
+    this.hp=100;this.maxHp=100;this.damage=0; // accumulated knockback multiplier
+    this.grounded=false;this.jumps=2;this.jumpCount=0;
+    this.state='idle'; // idle,walk,jump,fall,attack,hitstun,dead
+    this.attackTimer=0;this.attackPhase='';this.currentAttack=null;
+    this.hitstunTimer=0;this.invincible=0;
+    this.animFrame=0;this.animTimer=0;
+    this.combo=0;this.lastHitBy=null;
+    this.speedMult=1;this.strengthMult=1;this.shielded=false;
+    this.effectTimers={speed:0,strength:0,shield:0};
+    this.stocks=3; // for stock mode
+    this.wins=0;
+    this.walkCycle=0;
+  }
+
+  getAttack(dir,inAir){
+    const atks=this.def.attacks;
+    if(inAir){
+      if(dir==='up')return atks.airUp;
+      if(dir==='down')return atks.airDown;
+      if(dir==='forward')return atks.airForward;
+      return atks.airNeutral;
+    }
+    if(dir==='up')return atks.up;
+    if(dir==='down')return atks.down;
+    if(dir==='forward')return atks.forward;
+    if(dir==='special')return atks.special;
+    return atks.neutral;
+  }
+
+  startAttack(dir){
+    if(this.state==='attack'||this.state==='hitstun')return;
+    const atk=this.getAttack(dir,!this.grounded);
+    this.currentAttack=atk;
+    this.attackTimer=atk.startup+atk.active+atk.recover;
+    this.attackPhase='startup';
+    this.state='attack';
+    playSound(300,0.05,'square',0.08);
+  }
+
+  update(platforms,opponent){
+    // effect timers
+    for(let k in this.effectTimers){
+      if(this.effectTimers[k]>0){this.effectTimers[k]--;if(this.effectTimers[k]<=0){
+        if(k==='speed')this.speedMult=1;if(k==='strength')this.strengthMult=1;if(k==='shield')this.shielded=false;
+      }}
+    }
+    if(this.invincible>0)this.invincible--;
+    // animation
+    this.animTimer++;
+    if(this.animTimer%6===0)this.animFrame++;
+
+    if(this.state==='hitstun'){
+      this.hitstunTimer--;
+      if(this.hitstunTimer<=0)this.state='idle';
+    }
+
+    if(this.state==='attack'){
+      this.attackTimer--;
+      const atk=this.currentAttack;
+      const elapsed=atk.startup+atk.active+atk.recover-this.attackTimer;
+      if(elapsed<atk.startup)this.attackPhase='startup';
+      else if(elapsed<atk.startup+atk.active)this.attackPhase='active';
+      else this.attackPhase='recover';
+      if(this.attackTimer<=0){this.state='idle';this.currentAttack=null;this.attackPhase=''}
+    }
+
+    // gravity
+    if(!this.grounded){this.vy+=0.6;if(this.vy>15)this.vy=15}
+
+    // move
+    this.x+=this.vx;this.y+=this.vy;
+
+    // friction
+    if(this.grounded&&this.state!=='hitstun'){this.vx*=0.8}
+    else if(this.state==='hitstun'){this.vx*=0.98}
+    else{this.vx*=0.92}
+
+    // platform collision
+    this.grounded=false;
+    for(const p of platforms){
+      if(this.vy>=0&&this.y>=p.y&&this.y-this.vy<p.y+5&&this.x>p.x&&this.x<p.x+p.w){
+        this.y=p.y;this.vy=0;this.grounded=true;this.jumpCount=0;
+      }
+    }
+
+    // walk cycle
+    if(this.grounded&&Math.abs(this.vx)>0.5)this.walkCycle+=0.15;
+    else this.walkCycle=0;
+
+    // auto face opponent
+    if(opponent&&this.state!=='attack'&&this.state!=='hitstun'){
+      this.facing=opponent.x>this.x?1:-1;
+    }
+  }
+
+  takeDamage(dmg,kbx,kby,attacker){
+    if(this.invincible>0)return;
+    const actualDmg=this.shielded?dmg*0.5:dmg;
+    this.hp-=actualDmg;
+    this.damage+=actualDmg*0.3;
+    const kbMult=1+this.damage/80;
+    this.vx=kbx*kbMult;
+    this.vy=kby*kbMult;
+    this.hitstunTimer=Math.floor(10+actualDmg*1.5);
+    this.state='hitstun';
+    this.invincible=8;
+    this.lastHitBy=attacker;
+    sfxHit();
+    shake(Math.min(actualDmg/3,8));
+    spawnParticles(this.x,this.y-20,this.def.color,6,actualDmg/3);
+  }
+
+  draw(){
+    const f=this;
+    const c=f.def.color;
+    const blink=f.invincible>0&&Math.floor(f.invincible/2)%2===0;
+    if(blink)return;
+
+    ctx.save();
+    ctx.translate(f.x,f.y);
+
+    const headY=-50;const bodyTop=-42;const bodyBot=-10;
+    const legLen=18;const armLen=16;
+
+    // legs
+    const lAngle=Math.sin(f.walkCycle)*0.5;
+    ctx.strokeStyle=c;ctx.lineWidth=3;ctx.lineCap='round';
+
+    // left leg
+    ctx.beginPath();ctx.moveTo(0,bodyBot);
+    ctx.lineTo(-6+Math.sin(lAngle)*legLen,-10+legLen*0.8);
+    ctx.lineTo(-8+Math.sin(lAngle)*legLen*1.2,bodyBot+legLen);
+    ctx.stroke();
+    // right leg
+    ctx.beginPath();ctx.moveTo(0,bodyBot);
+    ctx.lineTo(6+Math.sin(-lAngle)*legLen,-10+legLen*0.8);
+    ctx.lineTo(8+Math.sin(-lAngle)*legLen*1.2,bodyBot+legLen);
+    ctx.stroke();
+
+    // body
+    ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,bodyTop);ctx.lineTo(0,bodyBot);ctx.stroke();
+
+    // arms + weapon
+    const atkAnim=f.state==='attack'?f.attackPhase:'';
+    const armBaseY=-38;
+    let weapAngle=0,weapX=0,weapY=0;
+
+    if(atkAnim==='active'||atkAnim==='startup'){
+      const swingDir=f.currentAttack===f.def.attacks.up||f.currentAttack===f.def.attacks.airUp?-1:
+                     f.currentAttack===f.def.attacks.down||f.currentAttack===f.def.attacks.airDown?1:0;
+      const swingFwd=f.currentAttack===f.def.attacks.forward||f.currentAttack===f.def.attacks.airForward||
+                     f.currentAttack===f.def.attacks.neutral||f.currentAttack===f.def.attacks.airNeutral;
+
+      const progress=atkAnim==='startup'?0.5:1;
+      if(swingDir===-1){weapAngle=-Math.PI*0.6*progress;weapX=f.facing*10;weapY=armBaseY-10}
+      else if(swingDir===1){weapAngle=Math.PI*0.4*progress;weapX=f.facing*8;weapY=armBaseY+5}
+      else{weapAngle=f.facing*Math.PI*0.3*progress;weapX=f.facing*18*progress;weapY=armBaseY}
+
+      // attack arm
+      ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(weapX,weapY);ctx.stroke();
+      // weapon
+      ctx.save();ctx.translate(weapX,weapY);ctx.rotate(weapAngle);
+      ctx.strokeStyle=f.def.weaponColor;ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(f.facing*25,-5);ctx.stroke();
+      // weapon head
+      ctx.fillStyle=f.def.weaponColor;
+      if(f.id==='alex'){ctx.fillRect(f.facing*20,-10,8,12)} // axe head
+      else if(f.id==='skeleton'){ctx.beginPath();ctx.arc(f.facing*20,-3,5,0,Math.PI*2);ctx.fill()} // bow
+      else if(f.id==='creeper'){ctx.fillStyle='#FF4444';ctx.fillRect(f.facing*18,-8,10,10)} // tnt
+      ctx.restore();
+
+      // other arm swinging back
+      ctx.strokeStyle=c;ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(-f.facing*12,armBaseY+8);ctx.stroke();
+    } else if(f.state==='hitstun'){
+      ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(-f.vx*2,armBaseY-8);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(-f.vx*2+5,armBaseY+5);ctx.stroke();
+    } else {
+      // idle/walk arms
+      const aSwing=Math.sin(f.walkCycle)*0.3;
+      ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(f.facing*12+Math.sin(aSwing)*5,armBaseY+10);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(-f.facing*5-Math.sin(aSwing)*5,armBaseY+12);ctx.stroke();
+      // weapon at rest
+      ctx.strokeStyle=f.def.weaponColor;ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(f.facing*12,armBaseY+10);ctx.lineTo(f.facing*20,armBaseY+22);ctx.stroke();
+    }
+
+    // head
+    ctx.fillStyle=c;ctx.strokeStyle=c;ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(0,headY,10,0,Math.PI*2);ctx.fill();
+
+    // eyes (white dots facing direction)
+    ctx.fillStyle='#fff';
+    ctx.fillRect(f.facing*3-2,headY-3,3,3);
+    ctx.fillRect(f.facing*6-1,headY-3,3,3);
+
+    // Enderman purple particles
+    if(f.id==='enderman'&&Math.random()<0.3){
+      spawnParticles(f.x+Math.random()*20-10,f.y-30+Math.random()*20,'#9B59B6',1,1);
+    }
+    // Blaze flame particles
+    if(f.id==='blaze'&&Math.random()<0.4){
+      spawnParticles(f.x+Math.random()*16-8,f.y-20+Math.random()*30,'#F39C12',1,0.5);
+    }
+    // Creeper face
+    if(f.id==='creeper'){
+      ctx.fillStyle='#000';
+      ctx.fillRect(-4,headY-4,3,3);ctx.fillRect(2,headY-4,3,3);
+      ctx.fillRect(-3,headY+1,7,4);
+    }
+
+    // shield effect
+    if(f.shielded){
+      ctx.strokeStyle='rgba(100,200,255,0.5)';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(0,-25,28,0,Math.PI*2);ctx.stroke();
+    }
+
+    // speed effect
+    if(f.speedMult>1){
+      ctx.strokeStyle='rgba(0,191,255,0.3)';ctx.lineWidth=1;
+      for(let i=0;i<3;i++){
+        ctx.beginPath();ctx.moveTo(-f.facing*(10+i*8),-40+i*10);ctx.lineTo(-f.facing*(15+i*8),-35+i*10);ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+}
+
+// ===== ITEMS IN GAME =====
+let activeItems=[];
+class GameItem{
+  constructor(x,y,def){
+    this.x=x;this.y=y;this.def=def;this.vy=0;this.grounded=false;this.life=600;this.bobTimer=0;
+  }
+  update(platforms){
+    if(!this.grounded){this.vy+=0.4;this.y+=this.vy;
+      for(const p of platforms){
+        if(this.vy>=0&&this.y>=p.y-8&&this.y-this.vy<p.y&&this.x>p.x&&this.x<p.x+p.w){
+          this.y=p.y-8;this.vy=0;this.grounded=true;
+        }
+      }
+    }
+    this.bobTimer+=0.05;this.life--;
+  }
+  draw(){
+    const bob=Math.sin(this.bobTimer)*3;
+    ctx.fillStyle=this.def.color;
+    const y=this.y+bob;
+    // draw item based on icon type
+    if(this.def.icon==='apple'){
+      ctx.beginPath();ctx.arc(this.x,y,8,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#4A2';ctx.fillRect(this.x-1,y-12,2,5);
+    }else if(this.def.icon==='steak'){
+      ctx.beginPath();ctx.ellipse(this.x,y,10,7,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#6B3';ctx.fillRect(this.x+5,y-3,3,2);
+    }else if(this.def.icon==='potion'){
+      ctx.fillRect(this.x-4,y-10,8,14);
+      ctx.fillStyle='rgba(255,255,255,0.3)';ctx.fillRect(this.x-3,y-8,3,5);
+      ctx.fillStyle='#654';ctx.fillRect(this.x-3,y-13,6,4);
+    }else if(this.def.icon==='pearl'){
+      ctx.beginPath();ctx.arc(this.x,y,7,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.4)';ctx.beginPath();ctx.arc(this.x-2,y-2,3,0,Math.PI*2);ctx.fill();
+    }else if(this.def.icon==='tnt'){
+      ctx.fillRect(this.x-8,y-8,16,16);ctx.fillStyle='#FFF';ctx.fillRect(this.x-2,y-12,4,5);
+      ctx.fillStyle='#000';ctx.font='8px monospace';ctx.textAlign='center';ctx.fillText('T',this.x,y+3);
+    }else if(this.def.icon==='shield'){
+      ctx.beginPath();ctx.moveTo(this.x,y-10);ctx.lineTo(this.x+8,y-5);ctx.lineTo(this.x+6,y+8);
+      ctx.lineTo(this.x,y+12);ctx.lineTo(this.x-6,y+8);ctx.lineTo(this.x-8,y-5);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#666';ctx.fillRect(this.x-4,y-6,8,10);
+    }
+    // blinking when about to expire
+    if(this.life<120&&Math.floor(this.life/8)%2===0){
+      ctx.globalAlpha=0.3;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(this.x,y,12,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+    }
+  }
+}
+
+// ===== AI CONTROLLER =====
+class AIController{
+  constructor(difficulty=0.5){
+    this.difficulty=difficulty;this.actionTimer=0;this.action='idle';this.targetX=0;
+  }
+  update(fighter,opponent,platforms){
+    this.actionTimer--;
+    if(this.actionTimer>0)return;
+
+    const dx=opponent.x-fighter.x;const dy=opponent.y-fighter.y;
+    const dist=Math.abs(dx);const dir=dx>0?1:-1;
+
+    // decision making
+    const r=Math.random();
+    const aggression=this.difficulty;
+
+    if(fighter.state==='hitstun'){this.actionTimer=5;return}
+
+    // check if near edge
+    const nearEdge=fighter.x<100||fighter.x>W-100;
+
+    if(dist<60&&r<aggression*0.8){
+      // close range - attack
+      const atkR=Math.random();
+      if(dy<-30&&atkR<0.3)fighter.startAttack('up');
+      else if(dy>30&&atkR<0.3)fighter.startAttack('down');
+      else if(atkR<0.5)fighter.startAttack('forward');
+      else if(atkR<0.8)fighter.startAttack('neutral');
+      else fighter.startAttack('special');
+      this.actionTimer=Math.floor(15-aggression*8);
+    }else if(dist<150&&r<aggression*0.5){
+      // medium range
+      if(Math.random()<0.6){
+        fighter.vx=dir*fighter.def.speed*fighter.speedMult;
+      }else{
+        fighter.startAttack('forward');
+      }
+      this.actionTimer=Math.floor(12-aggression*5);
+    }else{
+      // far - approach
+      if(r<0.7||dist>200){
+        fighter.vx=dir*fighter.def.speed*fighter.speedMult*(0.5+aggression*0.5);
+      }
+      // jump if opponent is above or to avoid attacks
+      if((dy<-50||Math.random()<0.15)&&fighter.grounded){
+        fighter.vy=-fighter.def.jumpForce;fighter.grounded=false;fighter.jumpCount++;
+      }
+      this.actionTimer=Math.floor(10-aggression*4);
+    }
+
+    // recovery if off stage
+    if(fighter.y>H-80&&!fighter.grounded&&fighter.jumpCount<fighter.jumps){
+      fighter.vy=-fighter.def.jumpForce;fighter.jumpCount++;
+      fighter.vx=fighter.x<W/2?3:-3;
+    }
+
+    // dodge incoming attacks
+    if(opponent.state==='attack'&&dist<80&&Math.random()<aggression*0.4){
+      if(fighter.grounded){fighter.vy=-fighter.def.jumpForce*0.7;fighter.grounded=false;fighter.jumpCount++}
+      fighter.vx=-dir*fighter.def.speed;
+      this.actionTimer=8;
+    }
+
+    // pick up nearby items
+    for(const item of activeItems){
+      if(Math.abs(item.x-fighter.x)<60&&Math.abs(item.y-fighter.y)<40){
+        fighter.vx=(item.x-fighter.x)*0.1;
+      }
+    }
+  }
+}
+
+// ===== GAME STATE =====
+const STATES={MENU:0,CHAR_SELECT:1,STAGE_SELECT:2,FIGHTING:3,VICTORY:4,STORY_INTRO:5,STORY:6,TRAINING:7,PAUSE:8,CREDITS:9};
+let gameState=STATES.MENU;
+let prevState=STATES.MENU;
+let menuSelection=0;
+let charSelectP1=0,charSelectP2=1;
+let stageSelect=0;
+let gameMode='vs_cpu'; // vs_cpu, local, story, training
+let fighters=[];
+let currentStage=null;
+let roundTimer=5400; // 90 seconds
+let itemSpawnTimer=0;
+let victoryTimer=0;
+let storyLevel=0;
+let storyOpponents=['steve','alex','creeper','enderman','skeleton','blaze'];
+let menuBlink=0;
+let transitionTimer=0;
+let transitionCallback=null;
+let countdownTimer=0;
+
+const charOrder=['steve','alex','creeper','enderman','skeleton','blaze'];
+
+// ===== DRAW HELPERS =====
+function drawText(text,x,y,size=16,color='#fff',align='center'){
+  ctx.fillStyle=color;ctx.font=`bold ${size}px 'Courier New', monospace`;ctx.textAlign=align;
+  // pixel shadow
+  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillText(text,x+2,y+2);
+  ctx.fillStyle=color;ctx.fillText(text,x,y);
+}
+
+function drawBox(x,y,w,h,fill='#333',border='#555'){
+  ctx.fillStyle=fill;ctx.fillRect(x,y,w,h);
+  ctx.strokeStyle=border;ctx.lineWidth=2;ctx.strokeRect(x,y,w,h);
+}
+
+function drawHealthBar(x,y,w,hp,maxHp,color,name,damage){
+  drawBox(x-2,y-2,w+4,24,'#222','#444');
+  const pct=Math.max(0,hp/maxHp);
+  // red background
+  ctx.fillStyle='#500';ctx.fillRect(x,y,w,20);
+  // health
+  ctx.fillStyle=color;ctx.fillRect(x,y,w*pct,20);
+  // damage indicator
+  if(damage>0){
+    ctx.fillStyle='rgba(255,100,0,0.5)';
+    const dmgW=Math.min(damage/200,1)*w;
+    ctx.fillRect(x+w*pct,y,Math.min(dmgW,w-w*pct),20);
+  }
+  // text
+  drawText(`${name}: ${Math.ceil(hp)}%`,x+w/2,y+15,12,'#fff');
+}
+
+function drawMinecraftBlock(x,y,w,h,color){
+  ctx.fillStyle=color;ctx.fillRect(x,y,w,h);
+  // grid lines for blocky look
+  ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=1;
+  const bs=16;
+  for(let bx=x;bx<x+w;bx+=bs){ctx.beginPath();ctx.moveTo(bx,y);ctx.lineTo(bx,y+h);ctx.stroke()}
+  for(let by=y;by<y+h;by+=bs){ctx.beginPath();ctx.moveTo(x,by);ctx.lineTo(x+w,by);ctx.stroke()}
+}
+
+// ===== STAGE DRAWING =====
+function drawStage(stage){
+  // background
+  ctx.fillStyle=stage.bg;ctx.fillRect(0,0,W,H);
+
+  // background elements
+  if(stage.bgElements){
+    stage.bgElements.forEach(el=>{
+      if(el.type==='cloud'){
+        ctx.fillStyle='rgba(255,255,255,0.7)';
+        ctx.fillRect(el.x,el.y,60,16);ctx.fillRect(el.x+10,el.y-8,40,8);ctx.fillRect(el.x+5,el.y+16,50,8);
+      }
+      if(el.type==='sun'){
+        ctx.fillStyle='#FFE44D';ctx.fillRect(el.x-20,el.y-20,40,40);
+      }
+      if(el.type==='lava'){
+        ctx.fillStyle='#FF4500';ctx.fillRect(0,el.y,W,H-el.y);
+        // animated lava
+        for(let i=0;i<W;i+=20){
+          ctx.fillStyle=Math.random()>0.5?'#FF6600':'#FF3300';
+          ctx.fillRect(i,el.y+Math.sin(Date.now()/500+i)*3,20,H-el.y);
+        }
+      }
+      if(el.type==='ghast'){
+        ctx.fillStyle='#DDD';ctx.fillRect(el.x-15,el.y-15+Math.sin(Date.now()/1000+el.x)*5,30,30);
+        ctx.fillStyle='#444';
+        ctx.fillRect(el.x-8,el.y-8+Math.sin(Date.now()/1000+el.x)*5,4,6);
+        ctx.fillRect(el.x+4,el.y-8+Math.sin(Date.now()/1000+el.x)*5,4,6);
+        ctx.fillRect(el.x-5,el.y+2+Math.sin(Date.now()/1000+el.x)*5,10,4);
+      }
+      if(el.type==='stars'){
+        ctx.fillStyle='#FFE';
+        for(let i=0;i<50;i++){
+          const sx=(i*137)%W,sy=(i*97)%H;
+          ctx.fillRect(sx,sy,2,2);
+        }
+      }
+      if(el.type==='dragon'){
+        ctx.fillStyle='#1A0030';
+        // simple dragon shape
+        const dy=Math.sin(Date.now()/800)*10;
+        ctx.fillRect(el.x-30,el.y+dy-10,60,20);
+        ctx.fillRect(el.x-40,el.y+dy-5,15,10);
+        ctx.fillRect(el.x+25,el.y+dy-5,15,10);
+        ctx.fillRect(el.x-10,el.y+dy-20,20,12);
+        ctx.fillStyle='#A020F0';
+        ctx.fillRect(el.x-6,el.y+dy-16,4,4);ctx.fillRect(el.x+4,el.y+dy-16,4,4);
+      }
+      if(el.type==='endCrystal'){
+        const pulse=Math.sin(Date.now()/300)*3;
+        ctx.fillStyle='#FF69FF';ctx.save();ctx.translate(el.x,el.y);ctx.rotate(Date.now()/500);
+        ctx.fillRect(-5-pulse,-5-pulse,10+pulse*2,10+pulse*2);ctx.restore();
+        ctx.fillStyle='#333';ctx.fillRect(el.x-8,el.y+8,16,8);
+      }
+    });
+  }
+
+  // trees (Plains)
+  if(stage.trees){
+    stage.trees.forEach(t=>{
+      ctx.fillStyle='#5C3A1E';ctx.fillRect(t.x-4,H-60-t.h,8,t.h);
+      ctx.fillStyle='#2D6B1E';
+      ctx.fillRect(t.x-20,H-60-t.h-10,40,15);
+      ctx.fillRect(t.x-15,H-60-t.h-25,30,18);
+      ctx.fillRect(t.x-10,H-60-t.h-35,20,14);
+    });
+  }
+
+  // platforms
+  stage.platforms.forEach(p=>{
+    drawMinecraftBlock(p.x,p.y,p.w,p.h,p.color);
+    // top highlight
+    ctx.fillStyle='rgba(255,255,255,0.1)';ctx.fillRect(p.x,p.y,p.w,3);
+  });
+}
+
+// ===== COMBAT RESOLUTION =====
+function checkAttackHit(attacker,defender){
+  if(attacker.state!=='attack'||attacker.attackPhase!=='active')return;
+  if(defender.invincible>0)return;
+  if(!attacker.currentAttack)return;
+  if(attacker.currentAttack._hit)return; // already hit this swing
+
+  const atk=attacker.currentAttack;
+  const dx=defender.x-attacker.x;
+  const dy=defender.y-attacker.y;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  const inFront=dx*attacker.facing>-20;
+
+  if(dist<atk.range&&(inFront||dist<30)){
+    const dmg=atk.dmg*attacker.strengthMult;
+    let kbx=attacker.facing*atk.kb*0.8;
+    let kby=-atk.kb*0.5;
+
+    // directional knockback
+    if(atk===attacker.def.attacks.up||atk===attacker.def.attacks.airUp){kby=-atk.kb;kbx=attacker.facing*2}
+    if(atk===attacker.def.attacks.down||atk===attacker.def.attacks.airDown){kby=atk.kb*0.3;kbx=attacker.facing*atk.kb*0.5}
+
+    defender.takeDamage(dmg,kbx,kby,attacker);
+    attacker.currentAttack._hit=true;
+
+    // self damage (creeper special)
+    if(atk.selfDmg){attacker.hp-=atk.selfDmg;spawnParticles(attacker.x,attacker.y-20,'#FF4444',10,5)}
+
+    // spawn projectile
+    if(atk.projectile&&!atk._projSpawned){
+      const speed=8;
+      projectiles.push(new Projectile(attacker.x+attacker.facing*20,attacker.y-30,
+        attacker.facing*speed,atk===attacker.def.attacks.up?-speed:atk===attacker.def.attacks.down?speed*0.5:-1,
+        atk.dmg*0.5,atk.kb*0.5,attacker,attacker.def.weaponColor));
+      atk._projSpawned=true;
+    }
+
+    // teleport (enderman special)
+    if(atk.teleport){
+      attacker.x=defender.x+attacker.facing*-50;
+      spawnParticles(attacker.x,attacker.y-20,'#9B59B6',15,4);
+    }
+  }
+}
+
+// ===== DRAW MENUS =====
+function drawMainMenu(){
+  // background
+  ctx.fillStyle='#1a0a2e';ctx.fillRect(0,0,W,H);
+  // decorative blocks
+  for(let i=0;i<W;i+=32){
+    for(let j=0;j<H;j+=32){
+      if(Math.random()<0.03){ctx.fillStyle=`hsl(${(i+j+Date.now()/50)%360},50%,20%)`;ctx.fillRect(i,j,32,32)}
+    }
+  }
+
+  // title
+  menuBlink+=0.05;
+  drawText('MINECRAFT',W/2,100,48,'#5DE8E0');
+  drawText('STICK FIGHTERS',W/2,150,40,'#FFD700');
+
+  // subtitle
+  const alpha=0.5+Math.sin(menuBlink)*0.5;
+  ctx.globalAlpha=alpha;
+  drawText('Press SPACE or ENTER to start',W/2,480,14,'#aaa');
+  ctx.globalAlpha=1;
+
+  // menu options
+  const options=['VS CPU','1v1 Local','Story Mode','Training','Credits'];
+  options.forEach((opt,i)=>{
+    const sel=i===menuSelection;
+    const y=220+i*45;
+    if(sel){
+      drawBox(W/2-120,y-20,240,36,'#2a1a4e','#5DE8E0');
+      drawText('> '+opt+' <',W/2,y+4,20,'#5DE8E0');
+    }else{
+      drawText(opt,W/2,y+4,18,'#888');
+    }
+  });
+
+  // controls hint
+  drawText('Arrow Keys + Space = P1 | WASD + E = P2',W/2,H-20,11,'#555');
+}
+
+function drawCharSelect(){
+  ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,W,H);
+  drawText('SELECT FIGHTERS',W/2,40,28,'#FFD700');
+
+  const chars=charOrder;
+  const startX=80;const spacing=140;
+
+  chars.forEach((id,i)=>{
+    const def=CHAR_DEFS[id];
+    const x=startX+i*spacing;const y=180;
+    const locked=def.locked&&!saveData.unlocked.includes(id);
+    const selP1=i===charSelectP1;
+    const selP2=i===charSelectP2&&(gameMode==='local');
+
+    // card
+    drawBox(x-50,y-60,100,160,locked?'#222':'#2a2a3e',selP1?'#4A90D9':selP2?'#E74C3C':'#444');
+    if(selP1){drawBox(x-50,y-60,100,160,'rgba(74,144,217,0.15)','#4A90D9')}
+    if(selP2){drawBox(x-50,y-60,100,160,'rgba(231,76,60,0.15)','#E74C3C')}
+
+    if(locked){
+      drawText('?',x,y+10,40,'#555');
+      drawText('LOCKED',x,y+60,12,'#555');
+    }else{
+      // mini stick figure
+      ctx.strokeStyle=def.color;ctx.lineWidth=3;ctx.lineCap='round';
+      ctx.beginPath();ctx.arc(x,y-20,12,0,Math.PI*2);ctx.stroke();ctx.fill&&(ctx.fillStyle=def.color);ctx.fill();
+      ctx.beginPath();ctx.moveTo(x,y-8);ctx.lineTo(x,y+20);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-15,y+15);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+15,y+15);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x,y+20);ctx.lineTo(x-10,y+40);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x,y+20);ctx.lineTo(x+10,y+40);ctx.stroke();
+
+      drawText(def.name,x,y+70,14,'#fff');
+      drawText(def.weapon,x,y+86,10,'#aaa');
+    }
+
+    if(selP1)drawText('P1',x,y-70,14,'#4A90D9');
+    if(selP2)drawText('P2',x,y-70,14,'#E74C3C');
+  });
+
+  // character info panel
+  const selDef=CHAR_DEFS[chars[charSelectP1]];
+  if(selDef&&!selDef.locked||saveData.unlocked.includes(chars[charSelectP1])){
+    drawBox(60,380,W-120,120,'#1a1a3e','#444');
+    drawText(selDef.name+' - '+selDef.desc,W/2,410,18,selDef.color);
+    drawText(`Speed: ${'|'.repeat(Math.round(selDef.speed))}  Jump: ${'|'.repeat(Math.round(selDef.jumpForce/2))}  Weight: ${'|'.repeat(Math.round(selDef.weight*5))}`,W/2,435,12,'#aaa');
+    // list attacks
+    const atkNames=Object.values(selDef.attacks).map(a=>a.name).slice(0,5).join(' | ');
+    drawText(atkNames,W/2,460,11,'#777');
+  }
+
+  drawText(gameMode==='local'?'P1: Arrows to select, Space to confirm | P2: A/D to select, E to confirm':
+    'Arrows to select, Space to confirm',W/2,H-15,11,'#555');
+  drawText('Press ESC to go back',W/2,H-35,11,'#555');
+}
+
+function drawStageSelect(){
+  ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,W,H);
+  drawText('SELECT STAGE',W/2,40,28,'#FFD700');
+
+  STAGE_DEFS.forEach((s,i)=>{
+    const x=120+i*280;const y=200;const sel=i===stageSelect;
+    drawBox(x-100,y-80,200,200,sel?'#2a2a4e':'#1a1a2e',sel?'#5DE8E0':'#444');
+
+    // mini stage preview
+    ctx.save();ctx.beginPath();ctx.rect(x-90,y-70,180,140);ctx.clip();
+    ctx.fillStyle=s.bg;ctx.fillRect(x-90,y-70,180,140);
+    s.platforms.forEach(p=>{
+      const sx=x-90+(p.x/W)*180;const sy=y-70+(p.y/H)*140;
+      ctx.fillStyle=p.color;ctx.fillRect(sx,sy,(p.w/W)*180,(p.h/H)*140+2);
+    });
+    ctx.restore();
+
+    drawText(s.name,x,y+100,16,sel?'#5DE8E0':'#888');
+  });
+
+  drawText('Arrows to select, Space to confirm | ESC to go back',W/2,H-15,11,'#555');
+}
+
+function drawHUD(){
+  if(!fighters[0]||!fighters[1])return;
+  drawHealthBar(20,15,280,fighters[0].hp,fighters[0].maxHp,fighters[0].def.color,fighters[0].def.name,fighters[0].damage);
+  drawHealthBar(W-300,15,280,fighters[1].hp,fighters[1].maxHp,fighters[1].def.color,fighters[1].def.name,fighters[1].damage);
+
+  // timer
+  const secs=Math.ceil(roundTimer/60);
+  drawText(secs.toString(),W/2,35,24,secs<=10?'#F44':'#fff');
+
+  // mode label
+  const modeLabel=gameMode==='story'?`Story ${storyLevel+1}/6`:gameMode==='training'?'Training':gameMode==='local'?'1v1 Local':'VS CPU';
+  drawText(modeLabel,W/2,55,11,'#666');
+}
+
+function drawVictory(){
+  ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(0,0,W,H);
+
+  const winner=fighters.find(f=>f.hp>0)||fighters[0];
+  const c=winner.def.color;
+
+  // winner character large drawing
+  ctx.save();ctx.translate(W/2,H/2-20);ctx.scale(2.5,2.5);
+  // head
+  ctx.fillStyle=c;ctx.beginPath();ctx.arc(0,-50,10,0,Math.PI*2);ctx.fill();
+  // body
+  ctx.strokeStyle=c;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,-42);ctx.lineTo(0,-10);ctx.stroke();
+  // victory arms raised
+  ctx.beginPath();ctx.moveTo(0,-38);ctx.lineTo(-18,-50);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,-38);ctx.lineTo(18,-50);ctx.stroke();
+  // weapon held high
+  ctx.strokeStyle=winner.def.weaponColor;ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(18,-50);ctx.lineTo(25,-70);ctx.stroke();
+  // legs
+  ctx.strokeStyle=c;ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(-8,8);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(8,8);ctx.stroke();
+  // eyes
+  ctx.fillStyle='#fff';ctx.fillRect(-4,-53,3,3);ctx.fillRect(2,-53,3,3);
+  ctx.restore();
+
+  // character-specific victory effects
+  if(winner.id==='creeper'){
+    for(let i=0;i<8;i++){
+      const a=Date.now()/200+i*0.8;
+      ctx.fillStyle='#FF4444';ctx.fillRect(W/2+Math.cos(a)*80-5,H/2+Math.sin(a)*60-45,10,10);
+    }
+  }
+  if(winner.id==='enderman'){
+    for(let i=0;i<12;i++){
+      ctx.fillStyle=`rgba(155,89,182,${0.3+Math.sin(Date.now()/300+i)*0.3})`;
+      ctx.fillRect(W/2+Math.cos(i)*100-3,H/2-40+Math.sin(Date.now()/400+i*2)*50-3,6,6);
+    }
+  }
+  if(winner.id==='blaze'){
+    for(let i=0;i<10;i++){
+      const a=Date.now()/150+i*0.6;
+      ctx.fillStyle=`hsl(${30+Math.sin(a)*20},100%,50%)`;
+      ctx.fillRect(W/2+Math.cos(a)*70-4,H/2+Math.sin(a)*50-50,8,8);
+    }
+  }
+  if(winner.id==='skeleton'){
+    // arrows in ground
+    for(let i=-2;i<=2;i++){
+      ctx.strokeStyle='#BDC3C7';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(W/2+i*40,H/2+60);ctx.lineTo(W/2+i*40+5,H/2+30);ctx.stroke();
+    }
+  }
+
+  drawText(winner.def.name+' WINS!',W/2,H/2+90,36,c);
+
+  // unique win quotes
+  const quotes={
+    steve:'The diamond champion!',alex:'Speed kills!',creeper:'Sssssuper explosive!',
+    enderman:'Now you see me...',skeleton:'Bullseye!',blaze:'Burn, baby, burn!'
+  };
+  drawText(quotes[winner.id]||'Victory!',W/2,H/2+125,16,'#aaa');
+
+  victoryTimer--;
+  if(victoryTimer<60){
+    const a=victoryTimer/60;
+    ctx.globalAlpha=a;
+    drawText('Press SPACE to continue',W/2,H-40,14,'#888');
+    ctx.globalAlpha=1;
+  }
+
+  // unlock check for story mode
+  if(gameMode==='story'&&winner.playerNum===1){
+    if(storyLevel===3&&!saveData.unlocked.includes('skeleton')){
+      saveData.unlocked.push('skeleton');save();
+      drawText('SKELETON UNLOCKED!',W/2,H/2+160,20,'#5DE8E0');
+    }
+    if(storyLevel===5&&!saveData.unlocked.includes('blaze')){
+      saveData.unlocked.push('blaze');save();
+      drawText('BLAZE UNLOCKED!',W/2,H/2+160,20,'#F39C12');
+    }
+  }
+}
+
+function drawCredits(){
+  ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+  drawText('MINECRAFT STICK FIGHTERS',W/2,80,32,'#5DE8E0');
+  drawText('A browser-based fighting game',W/2,120,16,'#888');
+  drawText('Inspired by Animation vs Minecraft',W/2,160,16,'#FFD700');
+  drawText('by Alan Becker',W/2,185,14,'#aaa');
+  drawText('Controls',W/2,230,20,'#5DE8E0');
+  drawText('P1: Arrow Keys + Space',W/2,260,14,'#aaa');
+  drawText('P2: WASD + E',W/2,285,14,'#aaa');
+  drawText('Combine directions with attack for different moves',W/2,310,12,'#777');
+  drawText('Win by depleting HP or knocking off stage',W/2,340,14,'#aaa');
+  drawText('Unlock characters by winning Story Mode',W/2,380,14,'#F39C12');
+  drawText('Press ESC to return',W/2,H-30,14,'#555');
+}
+
+function drawStoryIntro(){
+  ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+  const opponent=CHAR_DEFS[storyOpponents[storyLevel]];
+  drawText(`STORY MODE - FIGHT ${storyLevel+1}/6`,W/2,80,24,'#FFD700');
+  drawText(`VS ${opponent.name.toUpperCase()}`,W/2,140,32,opponent.color);
+  drawText(opponent.desc,W/2,175,16,'#aaa');
+
+  const storyTexts=[
+    'A new challenger approaches in the Plains...',
+    'Alex sharpens her axe for battle!',
+    'The Creeper lurks in the darkness of the Nether...',
+    'An Enderman teleports into the arena!',
+    'The Skeleton takes aim from the shadows...',
+    'The Blaze awaits in the fiery fortress!'
+  ];
+  drawText(storyTexts[storyLevel]||'',W/2,230,14,'#777');
+
+  if(storyLevel>=4){drawText('BOSS FIGHT!',W/2,270,20,'#FF4444')}
+
+  menuBlink+=0.05;
+  const a=0.5+Math.sin(menuBlink)*0.5;
+  ctx.globalAlpha=a;drawText('Press SPACE to fight!',W/2,H-60,16,'#5DE8E0');ctx.globalAlpha=1;
+  drawText('Press ESC to return to menu',W/2,H-30,11,'#555');
+}
+
+function drawPause(){
+  ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,0,W,H);
+  drawText('PAUSED',W/2,H/2-40,36,'#FFD700');
+  const opts=['Resume','Quit to Menu'];
+  opts.forEach((o,i)=>{
+    drawText(i===menuSelection?'> '+o+' <':o,W/2,H/2+20+i*40,20,i===menuSelection?'#5DE8E0':'#888');
+  });
+}
+
+function drawCountdown(){
+  if(countdownTimer>0){
+    const num=Math.ceil(countdownTimer/60);
+    const scale=1+(countdownTimer%60)/60*0.5;
+    ctx.save();ctx.translate(W/2,H/2);ctx.scale(scale,scale);
+    drawText(num>0?num.toString():'FIGHT!',0,15,60,num>0?'#FFD700':'#FF4444');
+    ctx.restore();
+  }
+}
+
+// ===== INITIALIZE FIGHT =====
+function startFight(p1Char,p2Char,stageIdx,p2IsCPU=true,cpuDiff=0.5){
+  const stage=STAGE_DEFS[stageIdx%STAGE_DEFS.length];
+  currentStage=stage;
+  const startX1=stage.platforms[0].x+80;
+  const startX2=stage.platforms[0].x+stage.platforms[0].w-80;
+
+  fighters=[new Fighter(p1Char,startX1,1,1),new Fighter(p2Char,startX2,-1,2)];
+  fighters[1].ai=p2IsCPU?new AIController(cpuDiff):null;
+
+  projectiles=[];activeItems=[];particles=[];
+  roundTimer=5400;itemSpawnTimer=300;
+  countdownTimer=180; // 3 second countdown
+  gameState=STATES.FIGHTING;
+}
+
+// ===== INPUT HANDLING FOR FIGHTERS =====
+function handleFighterInput(f,up,down,left,right,attack){
+  if(f.state==='hitstun'||f.state==='dead')return;
+  if(countdownTimer>0)return;
+
+  // movement
+  if(f.state!=='attack'){
+    if(left){f.vx=-f.def.speed*f.speedMult;f.state=f.grounded?'walk':'jump'}
+    else if(right){f.vx=f.def.speed*f.speedMult;f.state=f.grounded?'walk':'jump'}
+    else if(f.grounded&&f.state!=='attack'){f.state='idle'}
+  }
+
+  // jump
+  if(up&&f.jumpCount<f.jumps&&f.state!=='attack'){
+    if(!f._jumpHeld){
+      f.vy=-f.def.jumpForce;f.grounded=false;f.jumpCount++;f.state='jump';sfxJump();
+      f._jumpHeld=true;
+    }
+  }
+  if(!up)f._jumpHeld=false;
+
+  // fast fall
+  if(down&&!f.grounded){f.vy=Math.min(f.vy+1,12)}
+
+  // attack
+  if(attack&&!f._attackHeld){
+    let dir='neutral';
+    if(up)dir='up';
+    else if(down)dir='down';
+    else if(left||right)dir='forward';
+    // special: down+down quickly or hold attack
+    f.startAttack(dir);
+    f._attackHeld=true;
+  }
+  if(!attack){f._attackHeld=false;if(f.currentAttack)f.currentAttack._hit=false;if(f.currentAttack)f.currentAttack._projSpawned=false}
+}
+
+// ===== MAIN UPDATE =====
+function update(){
+  if(gameState===STATES.FIGHTING){
+    if(countdownTimer>0){countdownTimer--;return}
+
+    roundTimer--;
+
+    // P1 input
+    handleFighterInput(fighters[0],keys['ArrowUp'],keys['ArrowDown'],keys['ArrowLeft'],keys['ArrowRight'],keys['Space']);
+    // P2 input or AI
+    if(fighters[1].ai){
+      fighters[1].ai.update(fighters[1],fighters[0],currentStage.platforms);
+    }else{
+      handleFighterInput(fighters[1],keys['KeyW'],keys['KeyS'],keys['KeyA'],keys['KeyD'],keys['KeyE']);
+    }
+
+    // update fighters
+    fighters.forEach((f,i)=>{
+      f.update(currentStage.platforms,fighters[1-i]);
+    });
+
+    // combat
+    checkAttackHit(fighters[0],fighters[1]);
+    checkAttackHit(fighters[1],fighters[0]);
+
+    // projectiles
+    for(let i=projectiles.length-1;i>=0;i--){
+      const p=projectiles[i];p.update();
+      if(p.life<=0||p.x<-50||p.x>W+50||p.y>H+50){projectiles.splice(i,1);continue}
+      // hit check
+      fighters.forEach(f=>{
+        if(f!==p.owner&&f.invincible<=0){
+          if(Math.abs(p.x-f.x)<20&&Math.abs(p.y-(f.y-25))<30){
+            f.takeDamage(p.dmg,p.vx*0.5,-3,p.owner);
+            projectiles.splice(i,1);
+          }
+        }
+      });
+    }
+
+    // items
+    itemSpawnTimer--;
+    if(itemSpawnTimer<=0&&activeItems.length<3){
+      const def=ITEM_DEFS[Math.floor(Math.random()*ITEM_DEFS.length)];
+      const plat=currentStage.platforms[Math.floor(Math.random()*currentStage.platforms.length)];
+      activeItems.push(new GameItem(plat.x+Math.random()*plat.w,plat.y-60,def));
+      itemSpawnTimer=420+Math.random()*300;
+    }
+
+    for(let i=activeItems.length-1;i>=0;i--){
+      const item=activeItems[i];
+      item.update(currentStage.platforms);
+      if(item.life<=0){activeItems.splice(i,1);continue}
+
+      // pickup
+      fighters.forEach(f=>{
+        if(Math.abs(item.x-f.x)<25&&Math.abs(item.y-f.y+15)<30){
+          const eff=item.def;
+          if(eff.effect==='heal'){f.hp=Math.min(f.maxHp,f.hp+eff.value);spawnParticles(f.x,f.y-20,'#5F5',8,2)}
+          if(eff.effect==='speed'){f.speedMult=eff.value;f.effectTimers.speed=eff.duration}
+          if(eff.effect==='strength'){f.strengthMult=eff.value;f.effectTimers.strength=eff.duration}
+          if(eff.effect==='shield'){f.shielded=true;f.effectTimers.shield=eff.duration}
+          if(eff.effect==='teleport'){
+            const ox=fighters.find(o=>o!==f);
+            if(ox){f.x=ox.x+(Math.random()>0.5?60:-60);spawnParticles(f.x,f.y-20,'#9B59B6',12,3)}
+          }
+          if(eff.effect==='explosive'){
+            const ox=fighters.find(o=>o!==f);
+            if(ox&&Math.abs(ox.x-item.x)<80&&Math.abs(ox.y-item.y)<60){
+              ox.takeDamage(eff.value,(ox.x-item.x)*0.2,-5,f);
+            }
+            spawnParticles(item.x,item.y,'#FF4444',15,5);shake(6);
+          }
+          sfxItem();
+          activeItems.splice(i,1);
+        }
+      });
+    }
+
+    // death check (fall off stage)
+    fighters.forEach(f=>{
+      if(f.y>currentStage.deathY||f.x<-100||f.x>W+100){
+        f.hp=0;
+      }
+    });
+
+    // win condition
+    let winner=null;
+    if(fighters[0].hp<=0&&fighters[1].hp<=0){winner=fighters[0].damage<fighters[1].damage?fighters[0]:fighters[1]}
+    else if(fighters[0].hp<=0)winner=fighters[1];
+    else if(fighters[1].hp<=0)winner=fighters[0];
+    else if(roundTimer<=0)winner=fighters[0].hp>=fighters[1].hp?fighters[0]:fighters[1];
+
+    if(winner){
+      sfxKO();
+      gameState=STATES.VICTORY;
+      victoryTimer=240;
+      winner.wins++;
+      if(winner.playerNum===1){saveData.wins++;
+        if(gameMode==='story')saveData.storyProgress=Math.max(saveData.storyProgress,storyLevel+1);
+        save();
+      }
+    }
+
+    // particles
+    updateParticles();
+
+    // screen shake decay
+    if(shakeTime>0)shakeTime--;else shakeAmount=0;
+  }
+}
+
+// ===== MAIN DRAW =====
+function draw(){
+  ctx.save();
+  // screen shake
+  if(shakeAmount>0&&shakeTime>0){
+    ctx.translate(Math.random()*shakeAmount-shakeAmount/2,Math.random()*shakeAmount-shakeAmount/2);
+  }
+
+  if(gameState===STATES.MENU){drawMainMenu()}
+  else if(gameState===STATES.CHAR_SELECT){drawCharSelect()}
+  else if(gameState===STATES.STAGE_SELECT){drawStageSelect()}
+  else if(gameState===STATES.CREDITS){drawCredits()}
+  else if(gameState===STATES.STORY_INTRO){drawStoryIntro()}
+  else if(gameState===STATES.PAUSE){
+    drawStage(currentStage);fighters.forEach(f=>f.draw());drawHUD();drawPause();
+  }
+  else if(gameState===STATES.FIGHTING||gameState===STATES.VICTORY){
+    drawStage(currentStage);
+    activeItems.forEach(it=>it.draw());
+    projectiles.forEach(p=>p.draw());
+    drawParticles();
+    fighters.forEach(f=>f.draw());
+    drawHUD();
+    drawCountdown();
+    if(gameState===STATES.VICTORY)drawVictory();
+  }
+
+  ctx.restore();
+}
+
+// ===== MENU NAVIGATION =====
+document.addEventListener('keydown',e=>{
+  initAudio();
+  const k=e.code;
+
+  if(gameState===STATES.MENU){
+    if(k==='ArrowUp'){menuSelection=(menuSelection-1+5)%5;sfxMenu()}
+    if(k==='ArrowDown'){menuSelection=(menuSelection+1)%5;sfxMenu()}
+    if(k==='Space'||k==='Enter'){
+      sfxSelect();
+      if(menuSelection===0){gameMode='vs_cpu';gameState=STATES.CHAR_SELECT}
+      else if(menuSelection===1){gameMode='local';gameState=STATES.CHAR_SELECT}
+      else if(menuSelection===2){gameMode='story';storyLevel=0;gameState=STATES.STORY_INTRO}
+      else if(menuSelection===3){gameMode='training';gameState=STATES.CHAR_SELECT}
+      else if(menuSelection===4){gameState=STATES.CREDITS}
+    }
+  }
+  else if(gameState===STATES.CHAR_SELECT){
+    const maxIdx=charOrder.length-1;
+    if(k==='ArrowLeft'){charSelectP1=(charSelectP1-1+charOrder.length)%charOrder.length;sfxMenu()}
+    if(k==='ArrowRight'){charSelectP1=(charSelectP1+1)%charOrder.length;sfxMenu()}
+    if(gameMode==='local'){
+      if(k==='KeyA'){charSelectP2=(charSelectP2-1+charOrder.length)%charOrder.length;sfxMenu()}
+      if(k==='KeyD'){charSelectP2=(charSelectP2+1)%charOrder.length;sfxMenu()}
+    }
+    if(k==='Space'||k==='Enter'){
+      const p1Id=charOrder[charSelectP1];
+      const p1Def=CHAR_DEFS[p1Id];
+      if(p1Def.locked&&!saveData.unlocked.includes(p1Id))return;
+      if(gameMode==='local'){
+        const p2Id=charOrder[charSelectP2];
+        const p2Def=CHAR_DEFS[p2Id];
+        if(p2Def.locked&&!saveData.unlocked.includes(p2Id))return;
+      }
+      sfxSelect();
+      gameState=STATES.STAGE_SELECT;
+    }
+    if(k==='Escape'){gameState=STATES.MENU;sfxMenu()}
+  }
+  else if(gameState===STATES.STAGE_SELECT){
+    if(k==='ArrowLeft'){stageSelect=(stageSelect-1+STAGE_DEFS.length)%STAGE_DEFS.length;sfxMenu()}
+    if(k==='ArrowRight'){stageSelect=(stageSelect+1)%STAGE_DEFS.length;sfxMenu()}
+    if(k==='Space'||k==='Enter'){
+      sfxSelect();
+      const p1Id=charOrder[charSelectP1];
+      let p2Id=charOrder[charSelectP2];
+      if(gameMode==='vs_cpu'||gameMode==='training'){
+        // random CPU character
+        const available=charOrder.filter(c=>!CHAR_DEFS[c].locked||saveData.unlocked.includes(c));
+        p2Id=available[Math.floor(Math.random()*available.length)];
+      }
+      const diff=gameMode==='training'?0.2:0.5;
+      startFight(p1Id,p2Id,stageSelect,gameMode!=='local',diff);
+    }
+    if(k==='Escape'){gameState=STATES.CHAR_SELECT;sfxMenu()}
+  }
+  else if(gameState===STATES.STORY_INTRO){
+    if(k==='Space'||k==='Enter'){
+      sfxSelect();
+      const p1Id=charOrder[charSelectP1]||'steve';
+      const p2Id=storyOpponents[storyLevel];
+      const diff=0.3+storyLevel*0.12;
+      startFight(saveData.unlocked[0]||'steve',p2Id,storyLevel%STAGE_DEFS.length,true,diff);
+      gameMode='story';
+    }
+    if(k==='Escape'){gameState=STATES.MENU;sfxMenu()}
+  }
+  else if(gameState===STATES.FIGHTING){
+    if(k==='Escape'){prevState=STATES.FIGHTING;gameState=STATES.PAUSE;menuSelection=0;sfxMenu()}
+  }
+  else if(gameState===STATES.PAUSE){
+    if(k==='ArrowUp'){menuSelection=(menuSelection-1+2)%2;sfxMenu()}
+    if(k==='ArrowDown'){menuSelection=(menuSelection+1)%2;sfxMenu()}
+    if(k==='Space'||k==='Enter'){
+      sfxSelect();
+      if(menuSelection===0)gameState=STATES.FIGHTING;
+      else{gameState=STATES.MENU;menuSelection=0}
+    }
+    if(k==='Escape'){gameState=STATES.FIGHTING}
+  }
+  else if(gameState===STATES.VICTORY){
+    if(k==='Space'||k==='Enter'){
+      sfxSelect();
+      if(gameMode==='story'){
+        storyLevel++;
+        if(storyLevel>=storyOpponents.length){
+          // story complete
+          gameState=STATES.MENU;menuSelection=0;
+        }else{
+          gameState=STATES.STORY_INTRO;
+        }
+      }else{
+        gameState=STATES.MENU;menuSelection=0;
+      }
+    }
+  }
+  else if(gameState===STATES.CREDITS){
+    if(k==='Escape'){gameState=STATES.MENU;sfxMenu()}
+  }
+});
+
+// ===== TRAINING MODE FEATURES =====
+// In training, opponent doesn't die and HP resets
+function trainingUpdate(){
+  if(gameMode==='training'&&fighters[1]){
+    if(fighters[1].hp<30)fighters[1].hp=100;
+    fighters[1].damage=0;
+  }
+}
+
+// ===== GAME LOOP =====
+function gameLoop(){
+  update();
+  if(gameMode==='training')trainingUpdate();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+</body>
+</html>
