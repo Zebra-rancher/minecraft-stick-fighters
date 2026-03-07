@@ -316,46 +316,59 @@ const CHAR_DEFS={
 // ===== STAGE DEFINITIONS =====
 const STAGE_DEFS=[
   {name:'Plains',bg:'#87CEEB',platforms:[
-    {x:80,y:H-60,w:800,h:40,color:'#6B9B3A'},
-    {x:250,y:H-160,w:120,h:15,color:'#8B6914'},
-    {x:590,y:H-160,w:120,h:15,color:'#8B6914'},
-    {x:400,y:H-260,w:80,h:15,color:'#8B6914'}
+    // full ground
+    {x:0,y:H-40,w:W,h:40,color:'#6B9B3A'},
+    // lower platforms
+    {x:60,y:H-140,w:160,h:20,color:'#8B6914'},
+    {x:380,y:H-130,w:200,h:20,color:'#8B6914'},
+    {x:720,y:H-150,w:160,h:20,color:'#8B6914'},
+    // mid platform
+    {x:430,y:H-250,w:100,h:15,color:'#8B6914'},
+    // top platform
+    {x:410,y:H-340,w:60,h:12,color:'#8B6914'}
   ],deathY:H+100,
   trees:[{x:120,h:80},{x:820,h:70}],
   bgElements:[{type:'cloud',x:100,y:60},{type:'cloud',x:400,y:40},{type:'cloud',x:700,y:80},{type:'sun',x:840,y:60}]},
 
   {name:'Nether Fortress',bg:'#330000',platforms:[
-    {x:60,y:H-80,w:250,h:30,color:'#722F37'},
-    {x:370,y:H-80,w:220,h:30,color:'#722F37'},
-    {x:650,y:H-80,w:250,h:30,color:'#722F37'},
-    {x:200,y:H-180,w:130,h:15,color:'#5C2626'},
-    {x:560,y:H-180,w:130,h:15,color:'#5C2626'},
-    {x:380,y:H-280,w:80,h:15,color:'#5C2626'}
+    // full ground (nether brick)
+    {x:0,y:H-40,w:W,h:40,color:'#722F37'},
+    // lower platforms
+    {x:60,y:H-140,w:160,h:20,color:'#5C2626'},
+    {x:380,y:H-130,w:200,h:20,color:'#5C2626'},
+    {x:720,y:H-150,w:160,h:20,color:'#5C2626'},
+    // mid platform
+    {x:430,y:H-250,w:100,h:15,color:'#5C2626'},
+    // top platform
+    {x:410,y:H-340,w:60,h:12,color:'#5C2626'}
   ],deathY:H+100,lava:true,
   bgElements:[{type:'lava',y:H-20},{type:'ghast',x:150,y:100},{type:'ghast',x:750,y:150}]},
 
   {name:'The End',bg:'#0D0015',platforms:[
-    {x:150,y:H-100,w:180,h:25,color:'#D4CC8E'},
-    {x:460,y:H-100,w:180,h:25,color:'#D4CC8E'},
-    {x:300,y:H-200,w:120,h:15,color:'#C4BC7E'},
-    {x:520,y:H-200,w:100,h:15,color:'#C4BC7E'},
-    {x:380,y:H-310,w:70,h:15,color:'#C4BC7E'}
+    // full ground (end stone)
+    {x:0,y:H-40,w:W,h:40,color:'#D4CC8E'},
+    // lower platforms
+    {x:60,y:H-140,w:160,h:25,color:'#C4BC7E'},
+    {x:380,y:H-130,w:200,h:25,color:'#C4BC7E'},
+    {x:720,y:H-150,w:160,h:25,color:'#C4BC7E'},
+    // mid platform
+    {x:430,y:H-250,w:100,h:15,color:'#C4BC7E'},
+    // top platform
+    {x:410,y:H-340,w:60,h:12,color:'#C4BC7E'}
   ],deathY:H+100,
-  bgElements:[{type:'stars'},{type:'dragon',x:480,y:80},{type:'endCrystal',x:380,y:H-340},{type:'endCrystal',x:610,y:H-340}]},
+  bgElements:[{type:'stars'},{type:'dragon',x:480,y:80},{type:'endCrystal',x:380,y:H-270},{type:'endCrystal',x:610,y:H-270}]},
 
   {name:'Jungle',bg:'#2D5A1E',platforms:[
-    // ground with gaps
-    {x:40,y:H-50,w:200,h:35,color:'#3B7A1A'},
-    {x:720,y:H-50,w:200,h:35,color:'#3B7A1A'},
-    // tree trunk platforms (lower)
-    {x:300,y:H-120,w:60,h:100,color:'#5C3A1E'},
-    {x:550,y:H-140,w:60,h:120,color:'#5C3A1E'},
-    // leaf canopy platforms (mid)
-    {x:220,y:H-160,w:200,h:18,color:'#1E7A0E'},
-    {x:500,y:H-180,w:160,h:18,color:'#1E7A0E'},
-    // high canopy
-    {x:340,y:H-270,w:100,h:15,color:'#168A06'},
-    {x:480,y:H-320,w:60,h:12,color:'#168A06'}
+    // full ground
+    {x:0,y:H-40,w:W,h:40,color:'#3B7A1A'},
+    // lower leaf platforms
+    {x:60,y:H-140,w:160,h:20,color:'#1E7A0E'},
+    {x:380,y:H-130,w:200,h:20,color:'#1E7A0E'},
+    {x:720,y:H-150,w:160,h:20,color:'#1E7A0E'},
+    // mid canopy
+    {x:430,y:H-250,w:100,h:15,color:'#168A06'},
+    // top canopy
+    {x:410,y:H-340,w:60,h:12,color:'#168A06'}
   ],deathY:H+100,
   bgElements:[{type:'jungle_bg'},{type:'vines'},{type:'parrot',x:200,y:120},{type:'parrot',x:700,y:90}]},
 
