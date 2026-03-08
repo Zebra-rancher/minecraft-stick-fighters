@@ -1690,7 +1690,7 @@ function startFight(p1Char,p2Char,stageIdx,p2IsCPU=true,cpuDiff=0.5){
   fighters=[new Fighter(p1Char,sx1,1,1),new Fighter(p2Char,sx2,-1,2)];
   fighters[1].ai=p2IsCPU?new AIController(cpuDiff):null;
   projectiles=[];activeItems=[];particles=[];plantedBombs=[];
-  smashBall=null;smashBallTimer=600+Math.random()*300;finalSmashActive=false;finalSmashData=null;
+  smashBall=null;smashBallTimer=300+Math.random()*180;finalSmashActive=false;finalSmashData=null;
   roundTimer=5400;itemSpawnTimer=300;countdownTimer=180;gameState=S.FIGHTING;
 }
 
@@ -1802,7 +1802,7 @@ function update(){
     // Smash Ball spawning
     smashBallTimer--;
     if(!smashBall&&smashBallTimer<=0&&!fighters[0].hasSmash&&!fighters[1].hasSmash){
-      smashBall=new SmashBall();smashBallTimer=900+Math.random()*600; // respawn 15-25 sec later
+      smashBall=new SmashBall();smashBallTimer=600+Math.random()*300; // respawn 10-15 sec later
     }
     // Smash Ball update & hit detection
     if(smashBall&&smashBall.active){
