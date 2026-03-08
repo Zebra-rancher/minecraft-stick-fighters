@@ -20,7 +20,7 @@ const W=960,H=540;
 canvas.width=W;canvas.height=H;
 
 // ===== SAVE DATA =====
-let saveData={unlocked:['second_coming','red','blue','green'],storyProgress:0,wins:0};
+let saveData={unlocked:['second_coming','red','blue','green','spider'],storyProgress:0,wins:0};
 try{const s=localStorage.getItem('mcfighters2');if(s)saveData=JSON.parse(s)}catch(e){}
 function save(){try{localStorage.setItem('mcfighters2',JSON.stringify(saveData))}catch(e){}}
 
@@ -203,6 +203,63 @@ function drawWeapon(type,x,y,angle,facing,enchanted=true){
     ctx.fillStyle='#AA66CC';
     ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-12,-8);ctx.lineTo(-14,-4);ctx.lineTo(-4,2);ctx.fill();
   }
+  else if(type==='spider_fangs'){
+    // two curved fangs
+    ctx.fillStyle='#333';
+    ctx.beginPath();ctx.moveTo(2,-6);ctx.lineTo(14,-10);ctx.lineTo(16,-4);ctx.lineTo(6,-2);ctx.fill();
+    ctx.beginPath();ctx.moveTo(2,6);ctx.lineTo(14,10);ctx.lineTo(16,4);ctx.lineTo(6,2);ctx.fill();
+    // fang tips (red for venom)
+    ctx.fillStyle='#CC2222';
+    ctx.fillRect(14,-10,3,3);ctx.fillRect(14,8,3,3);
+    // mouth
+    ctx.fillStyle='#111';ctx.fillRect(0,-3,6,6);
+  }
+  else if(type==='spider_web'){
+    // web ball projectile weapon
+    ctx.fillStyle='#DDD';
+    ctx.beginPath();ctx.arc(10,0,8,0,Math.PI*2);ctx.fill();
+    // web strands
+    ctx.strokeStyle='#BBB';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(2,0);ctx.lineTo(18,0);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(10,-8);ctx.lineTo(10,8);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(4,-6);ctx.lineTo(16,6);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(4,6);ctx.lineTo(16,-6);ctx.stroke();
+  }
+  else if(type==='ender_claws'){
+    // long dark claws
+    ctx.fillStyle='#1A0A2E';
+    ctx.fillRect(4,-8,4,16); // main claw
+    ctx.fillRect(10,-6,3,12);
+    ctx.fillRect(16,-4,3,8);
+    // purple tips
+    ctx.fillStyle='#9B59B6';
+    ctx.fillRect(4,-10,4,4);ctx.fillRect(10,-8,3,4);ctx.fillRect(16,-6,3,4);
+    // ender particles
+    const t=Date.now()/200;
+    for(let i=0;i<2;i++){
+      ctx.fillStyle=`rgba(155,89,182,${0.4+Math.sin(t+i)*0.3})`;
+      ctx.fillRect(6+Math.sin(t+i*3)*5,-4+Math.cos(t+i*2)*4,2,2);
+    }
+  }
+  else if(type==='ender_block'){
+    // held block
+    ctx.fillStyle='#5C3A1E';ctx.fillRect(2,-8,14,14);
+    ctx.fillStyle='#6B9B3A';ctx.fillRect(2,-8,14,4);
+    ctx.fillStyle='rgba(0,0,0,0.2)';ctx.fillRect(4,-4,10,8);
+  }
+  else if(type==='skeleton_bow'){
+    // bone-colored bow
+    ctx.strokeStyle='#E8DCC8';ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(8,0,14,Math.PI*-0.4,Math.PI*0.4);ctx.stroke();
+    // string
+    ctx.strokeStyle='#999';ctx.lineWidth=1;
+    const bx1=8+Math.cos(-Math.PI*0.4)*14, by1=Math.sin(-Math.PI*0.4)*14;
+    const bx2=8+Math.cos(Math.PI*0.4)*14, by2=Math.sin(Math.PI*0.4)*14;
+    ctx.beginPath();ctx.moveTo(bx1,by1);ctx.lineTo(4,0);ctx.lineTo(bx2,by2);ctx.stroke();
+    // arrow nocked
+    ctx.fillStyle='#AAA';ctx.fillRect(0,-1,18,2);
+    ctx.fillStyle='#888';ctx.beginPath();ctx.moveTo(18,0);ctx.lineTo(22,-3);ctx.lineTo(22,3);ctx.fill();
+  }
 
   ctx.restore();
 }
@@ -310,6 +367,51 @@ const CHAR_DEFS={
       special:{dmg:22,kb:10,range:55,startup:10,active:6,recover:16,name:'/execute',commandTP:true,weaponDraw:'command_block'}
     },
     passive:'commandAura' // 1 dmg/sec to nearby opponents
+  },
+  skeleton:{name:'Skeleton',color:'#E8DCC8',weaponType:'skeleton_bow',speed:4.2,jumpForce:11,weight:0.75,
+    desc:'Sharpshooter - pure ranged glass cannon',locked:true,
+    attacks:{
+      neutral:{dmg:6,kb:2,range:220,startup:4,active:3,recover:9,name:'Quick Shot',projectile:true,projSpeed:13,weaponDraw:'skeleton_bow'},
+      forward:{dmg:12,kb:5,range:280,startup:8,active:3,recover:14,name:'Power Shot',projectile:true,projSpeed:15,weaponDraw:'skeleton_bow'},
+      up:{dmg:8,kb:4,range:200,startup:6,active:3,recover:11,name:'Sky Shot',projectile:true,projAngle:-1.2,projSpeed:11,weaponDraw:'skeleton_bow'},
+      down:{dmg:5,kb:2,range:200,startup:5,active:3,recover:10,name:'Tripwire Arrow',projectile:true,projSpeed:10,projAngle:0.3,slow:true,weaponDraw:'skeleton_bow'},
+      airNeutral:{dmg:5,kb:2,range:200,startup:3,active:3,recover:8,name:'Air Shot',projectile:true,projSpeed:12,weaponDraw:'skeleton_bow'},
+      airForward:{dmg:9,kb:4,range:240,startup:5,active:3,recover:10,name:'Aerial Volley',projectile:true,projSpeed:12,multiShot:2,weaponDraw:'skeleton_bow'},
+      airUp:{dmg:7,kb:6,range:180,startup:4,active:3,recover:9,name:'Rain Arrow',projectile:true,projAngle:-1.0,projSpeed:10,weaponDraw:'skeleton_bow'},
+      airDown:{dmg:8,kb:3,range:200,startup:4,active:3,recover:9,name:'Dive Shot',projectile:true,projAngle:0.6,projSpeed:11,weaponDraw:'skeleton_bow'},
+      special:{dmg:4,kb:2,range:260,startup:10,active:8,recover:14,name:'Arrow Rain',arrowRain:true,weaponDraw:'skeleton_bow'}
+    },
+    passive:'fragile' // takes 1.2x damage
+  },
+  spider:{name:'Spider',color:'#333333',weaponType:'spider_fangs',speed:5.2,jumpForce:13,weight:0.9,
+    desc:'Web grabber & wall climber with body slams',
+    attacks:{
+      neutral:{dmg:8,kb:3,range:40,startup:3,active:4,recover:7,name:'Fang Bite',weaponDraw:'spider_fangs'},
+      forward:{dmg:2,kb:0,range:140,startup:4,active:6,recover:8,name:'Web Grab',grab:true,weaponDraw:'spider_web'},
+      up:{dmg:6,kb:4,range:35,startup:3,active:4,recover:8,name:'Wall Pounce',elytraLaunch:true,weaponDraw:null},
+      down:{dmg:14,kb:7,range:60,startup:6,active:6,recover:14,name:'Body Slam Dash',charge:true,weaponDraw:null},
+      airNeutral:{dmg:7,kb:2,range:38,startup:3,active:4,recover:6,name:'Air Bite',weaponDraw:'spider_fangs'},
+      airForward:{dmg:12,kb:6,range:50,startup:4,active:5,recover:10,name:'Dive Bomb',elytraDive:true,weaponDraw:null},
+      airUp:{dmg:6,kb:5,range:36,startup:3,active:4,recover:8,name:'Web Sling',weaponDraw:'spider_web'},
+      airDown:{dmg:15,kb:8,range:55,startup:5,active:5,recover:12,name:'Pounce Slam',weaponDraw:null},
+      special:{dmg:3,kb:1,range:80,startup:6,active:10,recover:10,name:'Web Trap',plantBomb:true,weaponDraw:'spider_web'}
+    },
+    passive:'wallCling' // can cling to stage walls and jump off
+  },
+  enderman:{name:'Enderman',color:'#1A0A2E',weaponType:'ender_claws',speed:4.5,jumpForce:13,weight:0.95,
+    desc:'Teleport Striker - warps behind foes, throws blocks',locked:true,
+    attacks:{
+      neutral:{dmg:8,kb:3,range:48,startup:3,active:4,recover:8,name:'Claw Swipe',weaponDraw:'ender_claws'},
+      forward:{dmg:12,kb:5,range:50,startup:6,active:4,recover:12,name:'Warp Strike',commandTP:true,weaponDraw:'ender_claws'},
+      up:{dmg:10,kb:5,range:180,startup:5,active:4,recover:11,name:'Block Throw',projectile:true,projSpeed:9,projColor:'#5C3A1E',weaponDraw:'ender_block'},
+      down:{dmg:14,kb:7,range:65,startup:8,active:6,recover:14,name:'Ender Rage',aoe:true,weaponDraw:null},
+      airNeutral:{dmg:7,kb:2,range:45,startup:3,active:4,recover:7,name:'Air Claw',weaponDraw:'ender_claws'},
+      airForward:{dmg:11,kb:5,range:48,startup:5,active:4,recover:10,name:'Blink Strike',commandTP:true,weaponDraw:'ender_claws'},
+      airUp:{dmg:8,kb:8,range:40,startup:4,active:4,recover:9,name:'Ender Toss',weaponDraw:'ender_claws'},
+      airDown:{dmg:16,kb:8,range:60,startup:6,active:5,recover:13,name:'Blink Slam',shockwave:true,weaponDraw:'ender_claws'},
+      special:{dmg:0,kb:0,range:0,startup:4,active:3,recover:8,name:'Teleport Dodge',teleportUp:true,weaponDraw:null}
+    },
+    passive:'teleportDodge' // small chance to auto-dodge attacks
   }
 };
 
@@ -462,6 +564,7 @@ class Fighter{
     this._jumpHeld=false;this._attackHeld=false;
     this.grabTarget=null;this.grabTimer=0;
     this.fishingLine=null; // {x,y,vx,vy,active}
+    this.wallClinging=false;
     this.totemActive=false;this.totemTimer=0;
   }
 
@@ -560,6 +663,16 @@ class Fighter{
       if(this.y>H-60){this.y=H-60;this.vy=0;this.grounded=true;this.jumpCount=0}
     }
 
+    // wallCling passive (Spider) - cling to edges
+    if(this.def.passive==='wallCling'&&!this.grounded&&stage){
+      const atLeft=this.x<=10;const atRight=this.x>=W-10;
+      if((atLeft||atRight)&&this.vy>0){
+        this.vy*=0.3; // slow fall on walls
+        this.wallClinging=true;
+        this.jumpCount=0; // reset jumps to allow wall jump
+      }else this.wallClinging=false;
+    }else this.wallClinging=false;
+
     // walk cycle
     if(this.grounded&&Math.abs(this.vx)>0.5)this.walkCycle+=0.15;else this.walkCycle=0;
 
@@ -588,7 +701,16 @@ class Fighter{
   takeDamage(dmg,kbx,kby,attacker){
     if(this.invincible>0)return;
     if(this.totemActive){spawnParticles(this.x,this.y-20,'#FFD700',10,3);return}
-    const actualDmg=this.shielded?dmg*0.5:dmg;
+    // teleport dodge (Enderman) - 15% chance to blink away
+    if(this.def.passive==='teleportDodge'&&Math.random()<0.15&&this.state!=='hitstun'){
+      const dodgeDist=80*(Math.random()>0.5?1:-1);
+      this.x=Math.max(20,Math.min(W-20,this.x+dodgeDist));
+      spawnParticles(this.x,this.y-20,'#9B59B6',8,3);
+      sfxItem();return;
+    }
+    // fragile passive (Skeleton) - takes 1.2x damage
+    let actualDmg=this.shielded?dmg*0.5:dmg;
+    if(this.def.passive==='fragile')actualDmg*=1.2;
     this.hp-=actualDmg;this.damage+=actualDmg*0.3;
     const kbMult=1+this.damage/80;
     this.vx=kbx*kbMult;this.vy=kby*kbMult;
@@ -601,6 +723,14 @@ class Fighter{
     const f=this;const c=f.def.color;
     const blink=f.invincible>0&&Math.floor(f.invincible/2)%2===0;if(blink)return;
     ctx.save();ctx.translate(f.x,f.y);
+
+    // Mob-specific body proportions
+    const isTall=f.id==='enderman';
+    const isWide=f.id==='spider';
+    const isBony=f.id==='skeleton';
+    const scaleY=isTall?1.35:1;
+    const scaleX=isWide?1.3:1;
+    if(isTall||isWide)ctx.scale(scaleX,scaleY);
     const headY=-50,bodyTop=-42,bodyBot=-10,legLen=18,armLen=16;
 
     // elytra wings on back
@@ -653,9 +783,71 @@ class Fighter{
       drawWeapon(f.def.weaponType,f.facing*14,armBaseY+12,0.3,f.facing);
     }
 
-    // head
-    ctx.fillStyle=c;ctx.beginPath();ctx.arc(0,headY,10,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#fff';ctx.fillRect(f.facing*3-2,headY-3,3,3);ctx.fillRect(f.facing*6-1,headY-3,3,3);
+    // head - square for mobs, round for stick figures
+    ctx.fillStyle=c;
+    if(f.id==='skeleton'||f.id==='enderman'||f.id==='spider'){
+      // Minecraft-style square head
+      const hs=f.id==='enderman'?9:f.id==='spider'?12:10;
+      ctx.fillRect(-hs,headY-hs,hs*2,hs*2);
+    }else{
+      ctx.beginPath();ctx.arc(0,headY,10,0,Math.PI*2);ctx.fill();
+    }
+    // eyes (overridden by mob-specific draws below for mobs)
+    if(f.id!=='skeleton'&&f.id!=='enderman'&&f.id!=='spider'){
+      ctx.fillStyle='#fff';ctx.fillRect(f.facing*3-2,headY-3,3,3);ctx.fillRect(f.facing*6-1,headY-3,3,3);
+    }
+
+    // Spider - wide body, 8 red eyes, extra legs
+    if(f.id==='spider'){
+      // 8 red eyes (2 rows of 4)
+      ctx.fillStyle='#CC0000';
+      ctx.fillRect(-5,headY-5,2,2);ctx.fillRect(-1,headY-5,2,2);ctx.fillRect(3,headY-5,2,2);ctx.fillRect(-3,headY-2,2,2);
+      ctx.fillRect(1,headY-2,2,2);ctx.fillRect(-5,headY-1,2,2);ctx.fillRect(3,headY-1,2,2);ctx.fillRect(-1,headY+1,2,2);
+      // extra spider legs (4 on each side)
+      ctx.strokeStyle='#444';ctx.lineWidth=2;ctx.lineCap='round';
+      const lWave=Math.sin(f.walkCycle)*0.3;
+      for(let i=0;i<4;i++){
+        const yOff=-38+i*8;const spread=12+i*3;
+        ctx.beginPath();ctx.moveTo(0,yOff);ctx.lineTo(-spread-Math.sin(lWave+i)*4,yOff+spread*0.6);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(0,yOff);ctx.lineTo(spread+Math.sin(lWave+i)*4,yOff+spread*0.6);ctx.stroke();
+      }
+      // wall cling indicator
+      if(f.wallClinging){
+        ctx.strokeStyle='rgba(200,200,200,0.5)';ctx.lineWidth=1;ctx.setLineDash([2,2]);
+        for(let i=0;i<3;i++){const wx=f.x<W/2?-14:14;ctx.beginPath();ctx.moveTo(wx,-42+i*12);ctx.lineTo(wx*1.4,-45+i*12);ctx.stroke()}
+        ctx.setLineDash([]);
+      }
+    }
+
+    // Skeleton - square skull, ribs, bone-colored body
+    if(f.id==='skeleton'){
+      // ribs visible on body
+      ctx.strokeStyle='#D4C8B0';ctx.lineWidth=1;
+      for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(-5,-38+i*6);ctx.lineTo(5,-38+i*6);ctx.stroke()}
+      // dark eye sockets on square head
+      ctx.fillStyle='#000';
+      ctx.fillRect(-5,headY-4,4,5);ctx.fillRect(1,headY-4,4,5);
+      // nose hole
+      ctx.fillRect(-1,headY+2,2,2);
+      // jaw
+      ctx.fillStyle='#D4C8B0';ctx.fillRect(-6,headY+5,12,3);
+      ctx.fillStyle='#000';ctx.fillRect(-4,headY+6,2,2);ctx.fillRect(2,headY+6,2,2);
+    }
+
+    // Enderman - tall, purple ender particles, pink eyes
+    if(f.id==='enderman'){
+      const t=Date.now()/250;
+      // ender particles floating around
+      for(let i=0;i<8;i++){
+        ctx.fillStyle=`rgba(155,89,182,${0.2+Math.sin(t+i*1.5)*0.2})`;
+        ctx.fillRect(Math.sin(t+i*2)*22-1,Math.cos(t+i*1.7)*35-35,3,3);
+      }
+      // glowing pink/purple eyes
+      ctx.fillStyle=`rgba(255,100,255,${0.7+Math.sin(t*3)*0.3})`;
+      ctx.fillRect(-4,headY-3,3,2);ctx.fillRect(2,headY-3,3,2);
+      // open mouth when attacking
+      if(f.state==='attack'){ctx.fillStyle='#9B59B6';ctx.fillRect(-3,headY+3,6,4)}
+    }
 
     // King Orange crown
     if(f.id==='king_orange'){
@@ -756,9 +948,9 @@ let gameState=S.MENU,menuSelection=0,charSelectP1=0,charSelectP2=1,stageSelect=0
 let gameMode='vs_cpu';
 let fighters=[],currentStage=null,roundTimer=5400,itemSpawnTimer=0,victoryTimer=0;
 let storyLevel=0,menuBlink=0,countdownTimer=0;
-const charOrder=['second_coming','red','blue','green','yellow','purple','king_orange'];
-const storyOpponents=['red','blue','green','yellow','purple','king_orange','king_orange'];
-const storyStages=[0,3,4,1,2,1,2]; // Plains,Jungle,Village,Nether,End,Nether,End
+const charOrder=['second_coming','red','blue','green','spider','yellow','purple','skeleton','enderman','king_orange'];
+const storyOpponents=['red','blue','green','spider','yellow','skeleton','purple','enderman','king_orange','king_orange'];
+const storyStages=[0,3,4,0,1,3,2,4,1,2]; // Plains,Jungle,Village,Plains,Nether,Jungle,End,Village,Nether,End
 
 // ===== DRAW HELPERS =====
 function drawText(text,x,y,size=16,color='#fff',align='center'){
@@ -1041,7 +1233,7 @@ function drawHUD(){
   drawHealthBar(W-300,15,280,fighters[1].hp,fighters[1].maxHp,fighters[1].def.color,fighters[1].def.name,fighters[1].damage);
   const secs=Math.ceil(roundTimer/60);
   drawText(secs.toString(),W/2,35,24,secs<=10?'#F44':'#fff');
-  const ml=gameMode==='story'?`Story ${storyLevel+1}/7`:gameMode==='training'?'Training':gameMode==='local'?'1v1 Local':'VS CPU';
+  const ml=gameMode==='story'?`Story ${storyLevel+1}/${storyOpponents.length}`:gameMode==='training'?'Training':gameMode==='local'?'1v1 Local':'VS CPU';
   drawText(ml,W/2,55,11,'#666');
   // potion indicator for Blue
   fighters.forEach(f=>{
@@ -1148,21 +1340,25 @@ function drawVictory(){
 
   // unlock checks
   if(gameMode==='story'&&winner.playerNum===1){
-    if(storyLevel===3&&!saveData.unlocked.includes('yellow')){saveData.unlocked.push('yellow');save();drawText('YELLOW UNLOCKED!',W/2,H/2+160,20,'#F1C40F')}
-    if(storyLevel===4&&!saveData.unlocked.includes('purple')){saveData.unlocked.push('purple');save();drawText('PURPLE UNLOCKED!',W/2,H/2+160,20,'#9B59B6')}
-    if(storyLevel>=5&&!saveData.unlocked.includes('king_orange')){saveData.unlocked.push('king_orange');save();drawText('KING ORANGE UNLOCKED!',W/2,H/2+160,20,'#FF8C00')}
+    // Unlock characters at specific story fights
+    const unlockMap={4:'yellow',5:'skeleton',6:'purple',7:'enderman',8:'king_orange'};
+    const unlockColors={yellow:'#F1C40F',skeleton:'#E8DCC8',purple:'#9B59B6',enderman:'#1A0A2E',king_orange:'#FF8C00'};
+    if(unlockMap[storyLevel]&&!saveData.unlocked.includes(unlockMap[storyLevel])){
+      const uid=unlockMap[storyLevel];saveData.unlocked.push(uid);save();
+      drawText(CHAR_DEFS[uid].name.toUpperCase()+' UNLOCKED!',W/2,H/2+160,20,unlockColors[uid]);
+    }
   }
 }
 
 function drawStoryIntro(){
   ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
   const opp=CHAR_DEFS[storyOpponents[storyLevel]];
-  drawText(`STORY MODE - FIGHT ${storyLevel+1}/7`,W/2,80,24,'#FFD700');
+  drawText(`STORY MODE - FIGHT ${storyLevel+1}/${storyOpponents.length}`,W/2,80,24,'#FFD700');
   drawText(`VS ${opp.name.toUpperCase()}`,W/2,140,32,opp.color);
   drawText(opp.desc,W/2,175,16,'#aaa');
-  const texts=['Red sharpens his axe for battle!','Blue brews a fresh batch of potions...','Green readies his trident and rod!','Yellow lights the fuse...','Purple spreads his elytra wings!','King Orange activates the Command Block!','FINAL BATTLE - King Orange at full power!'];
+  const texts=['Red sharpens his axe for battle!','Blue brews a fresh batch of potions...','Green readies his trident and rod!','Spider crawls from the shadows...','Yellow lights the fuse...','Skeleton takes aim from afar...','Purple spreads his elytra wings!','Enderman appears from thin air...','King Orange activates the Command Block!','FINAL BATTLE - King Orange at full power!'];
   drawText(texts[storyLevel]||'',W/2,230,14,'#777');
-  if(storyLevel>=4)drawText(storyLevel>=5?'FINAL BOSS!':'BOSS FIGHT!',W/2,270,20,'#FF4444');
+  if(storyLevel>=7)drawText(storyLevel>=8?'FINAL BOSS!':'BOSS FIGHT!',W/2,270,20,'#FF4444');
   menuBlink+=0.05;ctx.globalAlpha=0.5+Math.sin(menuBlink)*0.5;drawText('Press SPACE to fight!',W/2,H-60,16,'#5DE8E0');ctx.globalAlpha=1;
   drawText('ESC to return to menu',W/2,H-30,11,'#555');
 }
@@ -1181,9 +1377,9 @@ function drawCredits(){
   drawText('Combine directions with attack for different moves',W/2,280,12,'#777');
   drawText('Win by depleting HP or knocking off stage',W/2,310,14,'#aaa');
   drawText('Characters',W/2,350,20,'#5DE8E0');
-  ['Second Coming - Adaptive Crafter','Red - Berserker','Blue - Alchemist Archer','Green - Trident Warrior',
-   'Yellow - Demolitionist (Unlock)','Purple - Elytra Brawler (Unlock)','King Orange - Command Block (Unlock)'].forEach((c,i)=>{
-    drawText(c,W/2,375+i*20,12,CHAR_DEFS[charOrder[i]].color);
+  ['Second Coming - Adaptive Crafter','Red - Berserker','Blue - Alchemist Archer','Green - Trident Warrior','Spider - Web Grabber',
+   'Yellow - Demolitionist (Unlock)','Purple - Elytra Brawler (Unlock)','Skeleton - Sharpshooter (Unlock)','Enderman - Teleport Striker (Unlock)','King Orange - Command Block (Unlock)'].forEach((c,i)=>{
+    drawText(c,W/2,370+i*17,11,CHAR_DEFS[charOrder[i]]?CHAR_DEFS[charOrder[i]].color:'#888');
   });
   drawText('ESC to return',W/2,H-30,14,'#555');
 }
