@@ -13,7 +13,8 @@ Or play on GitHub Pages: https://zebra-rancher.github.io/minecraft-stick-fighter
 - **10 playable characters** with unique movesets and Minecraft weapons
 - **3 Minecraft mob fighters** with square heads and unique proportions (Skeleton, Spider, Enderman)
 - **5 Minecraft-themed stages** (Plains, Nether Fortress, The End, Jungle, Village)
-- **Multiple game modes**: VS CPU, 1v1 Local, Story Mode, Training
+- **Multiple game modes**: VS CPU, 1v1 Local, Story Mode, Training Camp, Training
+- **Training Camp** - 10 unique minigames that unlock bonus attacks for each character
 - **Final Smash system** - break the floating Smash Ball to unleash a devastating super move
 - **Item drops**: Golden Apples, Potions, TNT, Ender Pearls, and more
 - **Character unlocks** through Story Mode progression (5 unlockable fighters)
@@ -29,10 +30,13 @@ Or play on GitHub Pages: https://zebra-rancher.github.io/minecraft-stick-fighter
 | Jump | Up Arrow | W |
 | Crouch | Down Arrow | S |
 | Attack | Space | E |
+| Bonus Attack | Q | R |
 
 Combine directions with attack for different moves (up+attack = uppercut, forward+attack = thrust, etc.)
 
 **Final Smash**: When you have the Smash Ball power (golden glow), press attack with NO direction held to trigger your Final Smash!
+
+**Bonus Attack**: Complete a character's Training Camp minigame to unlock their bonus attack. Press Q (P1) or R (P2) during battle to use it!
 
 ## Characters
 
@@ -55,6 +59,23 @@ Combine directions with attack for different moves (up+attack = uppercut, forwar
 | Skeleton | Square head, bone limbs | Enchanted Bow | Sniper - ranged focus, rapid arrows, fragile (1.2x damage taken) (Unlockable) |
 | Spider | Wide body (1.3x), 6 legs | Fangs + Web | Grappler - web grab, venom, wall cling passive (Unlockable) |
 | Enderman | Tall (1.35x), purple eyes | Ender blocks | Teleporter - block attacks, 15% auto-dodge, territorial (Unlockable) |
+
+## Training Camp
+
+Complete each character's unique minigame to unlock a powerful bonus attack!
+
+| Character | Minigame | Description | Bonus Attack |
+|-----------|----------|-------------|--------------|
+| Second Coming | Pixel Artist | Draw shapes on a grid - move cursor with arrows, place pixels with Space | Pixel Blast (14 dmg ranged) |
+| Red | Fox Friend | Care for a fox - feed, pet, and protect it from hostile mobs | Fox Fury (12 dmg companion lunge) |
+| Blue | Potion Lab | Mix potions - pick the right ingredients across 3 rounds | Mega Potion (10 dmg AoE splash) |
+| Green | Rhythm Block | FNF-style beat game - hit arrow keys to the rhythm, 15/20 to pass | Note Blast (11 dmg shockwave) |
+| Yellow | Redstone Circuit | Complete 3 redstone circuits by placing wire to connect levers to lamps | Redstone Surge (15 dmg lightning) |
+| Purple | Elytra Course | Fly through rings using up/down arrows, 9/12 rings to pass | Dive Bomb (18 dmg aerial dive) |
+| King Orange | Command Console | Pick the correct /command for each situation, 4/5 to pass | /smite (16 dmg lightning) |
+| Skeleton | Target Range | Aim and shoot at hay bale targets, 12/15 hits to pass | Piercing Arrow (10 dmg, long range) |
+| Spider | Web Weave | Connect dots in sequence to form a web pattern before time runs out | Venom Spit (8 dmg poison projectile) |
+| Enderman | Block Memory | Memory matching game - find all 6 pairs in under 20 flips | Ender Slam (14 dmg teleport + slam) |
 
 ## Final Smashes
 
