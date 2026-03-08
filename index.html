@@ -566,6 +566,7 @@ class Fighter{
     this.fishingLine=null; // {x,y,vx,vy,active}
     this.wallClinging=false;
     this.totemActive=false;this.totemTimer=0;
+    this.hasSmash=false;this.championForm=false;this.championTimer=0;
   }
 
   getAttack(dir,inAir){
@@ -612,6 +613,10 @@ class Fighter{
 
     if(this.invincible>0)this.invincible--;
     if(this.totemActive){this.totemTimer--;this.invincible=2;if(this.totemTimer<=0)this.totemActive=false}
+    // Champion Data form countdown (Purple Final Smash)
+    if(this.championForm){this.championTimer--;
+      if(this.championTimer<=0){this.championForm=false;this.def.color=this.origColor;this.strengthMult=1;this.speedMult=1;this.jumps=2;spawnParticles(this.x,this.y-20,'#9B59B6',15,4)}
+    }
     this.animTimer++;if(this.animTimer%6===0)this.animFrame++;
 
     // hitstun
@@ -874,6 +879,33 @@ class Fighter{
       for(let i=0;i<3;i++){spawnParticles(f.x+Math.random()*10-5,f.y-10+Math.random()*10,['#F00','#0F0','#FF0','#F0F'][i%4],1,2)}
     }
 
+    // Smash Ball glow (when fighter has Final Smash ready)
+    if(f.hasSmash){
+      const t=Date.now()/150;
+      ctx.strokeStyle=`rgba(255,215,0,${0.4+Math.sin(t)*0.3})`;ctx.lineWidth=3;
+      ctx.beginPath();ctx.arc(0,-25,32+Math.sin(t*2)*3,0,Math.PI*2);ctx.stroke();
+      // rainbow sparkles
+      for(let i=0;i<6;i++){
+        const a=t+i*Math.PI/3;
+        ctx.fillStyle=['#FF4444','#FFD700','#44FF44','#4444FF','#FF44FF','#44FFFF'][i];
+        ctx.globalAlpha=0.5+Math.sin(t*2+i)*0.3;
+        ctx.fillRect(Math.cos(a)*35-2,Math.sin(a)*30-25,4,4);
+      }
+      ctx.globalAlpha=1;
+    }
+    // Champion Data form aura (Purple)
+    if(f.championForm){
+      const t=Date.now()/100;
+      ctx.strokeStyle=`rgba(255,68,255,${0.3+Math.sin(t)*0.2})`;ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(0,-25,35+Math.sin(t*2)*4,0,Math.PI*2);ctx.stroke();
+      for(let i=0;i<8;i++){
+        ctx.fillStyle=`rgba(255,100,255,${0.3+Math.sin(t+i)*0.3})`;
+        ctx.fillRect(Math.sin(t+i*0.8)*28-2,Math.cos(t+i*0.8)*35-25,4,4);
+      }
+      // data glitch effect
+      if(Math.random()<0.1){ctx.fillStyle='rgba(255,68,255,0.3)';ctx.fillRect(-15,-55+Math.random()*40,30,3)}
+    }
+
     // fishing line visual
     if(f.fishingLine){
       ctx.strokeStyle='#CCC';ctx.lineWidth=1;ctx.setLineDash([3,3]);
@@ -908,6 +940,241 @@ class GameItem{
   }
 }
 
+// ===== SMASH BALL =====
+let smashBall=null;let smashBallTimer=0;
+class SmashBall{
+  constructor(){
+    this.x=W/2;this.y=100;this.vx=(Math.random()-0.5)*3;this.vy=(Math.random()-0.5)*2;
+    this.hp=3;this.size=18;this.bobT=0;this.active=true;
+  }
+  update(){
+    this.bobT+=0.05;this.x+=this.vx;this.y+=this.vy;
+    // bounce off walls/ceiling
+    if(this.x<30||this.x>W-30)this.vx*=-1;
+    if(this.y<30||this.y>H-80)this.vy*=-1;
+    // gentle drift
+    this.vx+=(Math.random()-0.5)*0.1;this.vy+=(Math.random()-0.5)*0.1;
+    this.vx=Math.max(-3,Math.min(3,this.vx));this.vy=Math.max(-2,Math.min(2,this.vy));
+  }
+  draw(){
+    const bob=Math.sin(this.bobT)*3;const y=this.y+bob;
+    // glow
+    const t=Date.now()/200;
+    ctx.fillStyle=`rgba(255,215,0,${0.15+Math.sin(t)*0.1})`;
+    ctx.beginPath();ctx.arc(this.x,y,this.size+8,0,Math.PI*2);ctx.fill();
+    // Minecraft icon shape (grass block)
+    ctx.fillStyle='#5C3A1E';ctx.fillRect(this.x-this.size/2,y-this.size/2,this.size,this.size);
+    ctx.fillStyle='#6B9B3A';ctx.fillRect(this.x-this.size/2,y-this.size/2,this.size,this.size/3);
+    // inner cross pattern
+    ctx.fillStyle='#FFD700';ctx.fillRect(this.x-2,y-this.size/2+2,4,this.size-4);
+    ctx.fillRect(this.x-this.size/2+2,y-2,this.size-4,4);
+    // sparkle ring
+    for(let i=0;i<4;i++){
+      const a=t+i*Math.PI/2;
+      ctx.fillStyle=`rgba(255,255,100,${0.5+Math.sin(t*2+i)*0.5})`;
+      ctx.fillRect(this.x+Math.cos(a)*22-2,y+Math.sin(a)*22-2+bob,4,4);
+    }
+    // damage flash
+    if(this.hp<3){ctx.strokeStyle='rgba(255,100,100,0.6)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(this.x,y,this.size/2+2,0,Math.PI*2);ctx.stroke()}
+  }
+  hit(fighter){
+    this.hp--;spawnParticles(this.x,this.y,'#FFD700',6,3);sfxHit();
+    if(this.hp<=0){
+      // fighter gets Final Smash!
+      fighter.hasSmash=true;
+      spawnParticles(this.x,this.y,'#FFD700',20,5);sfxItem();
+      playSound(1200,0.2,'sine',0.2);setTimeout(()=>playSound(1600,0.3,'sine',0.2),150);
+      this.active=false;smashBall=null;
+    }
+  }
+}
+
+// ===== FINAL SMASH SYSTEM =====
+let finalSmashActive=false;let finalSmashData=null;let finalSmashTimer=0;
+const FINAL_SMASH_DEFS={
+  second_coming:{name:'Awakened Form Rush',duration:120,type:'cinematic'},
+  red:{name:'Herobrine Possession',duration:90,type:'cinematic'},
+  blue:{name:'Potion Storm',duration:150,type:'cinematic'},
+  green:{name:'Note Block Staff',duration:100,type:'cinematic'},
+  yellow:{name:'Mega TNT Cannon',duration:110,type:'cinematic'},
+  purple:{name:'Champion Data Form',duration:720,type:'transformation'}, // 12 sec
+  king_orange:{name:'Minecraft Icon Staff',duration:100,type:'cinematic'},
+  skeleton:{name:'Arrow Storm',duration:120,type:'cinematic'},
+  spider:{name:'Web Prison',duration:110,type:'cinematic'},
+  enderman:{name:'Block Storm',duration:130,type:'cinematic'}
+};
+
+function triggerFinalSmash(fighter,opponent){
+  if(!fighter.hasSmash||finalSmashActive)return;
+  fighter.hasSmash=false;finalSmashActive=true;finalSmashTimer=0;
+  const def=FINAL_SMASH_DEFS[fighter.id];
+  finalSmashData={fighter,opponent,def,phase:0,hitLanded:false,particles:[],timer:0};
+
+  // Screen flash
+  playSound(800,0.3,'sine',0.25);playSound(1200,0.2,'sine',0.2);
+
+  if(fighter.id==='purple'){
+    // Purple transforms - no cinematic lock, just powered up
+    fighter.championForm=true;fighter.championTimer=def.duration;
+    fighter.origColor=fighter.def.color;fighter.def.color='#FF44FF';
+    fighter.strengthMult=2.0;fighter.speedMult=1.5;fighter.jumps=3;
+    finalSmashActive=false;finalSmashData=null;
+    spawnParticles(fighter.x,fighter.y-20,'#FF44FF',30,6);
+  }
+}
+
+function updateFinalSmash(){
+  if(!finalSmashActive||!finalSmashData)return;
+  const d=finalSmashData;d.timer++;
+  const f=d.fighter,o=d.opponent;
+
+  if(d.def.type==='cinematic'){
+    // Freeze both fighters during cinematic
+    f.state='idle';f.vx=0;o.state='idle';o.vx=0;
+
+    if(f.id==='second_coming'){
+      // Awakened form rush: big punch, then rapid combo
+      if(d.timer===1){spawnParticles(f.x,f.y-25,'#FFD700',20,5);f.def._origColor=f.def.color;f.def.color='#FFD700'}
+      if(d.timer===20){// initial big punch
+        const dx=o.x-f.x;f.x=o.x-f.facing*40;
+        if(Math.abs(dx)<200){d.hitLanded=true;o.takeDamage(5,f.facing*2,-2,f);shake(6)}
+      }
+      if(d.hitLanded&&d.timer>25&&d.timer<100&&d.timer%5===0){
+        // rapid punches and kicks
+        const side=d.timer%10<5?1:-1;
+        o.takeDamage(3,f.facing*side,-side,f);
+        spawnParticles(o.x+Math.random()*20-10,o.y-20+Math.random()*20-10,['#FFD700','#FFA500','#FF6600'][d.timer%3],3,2);
+        shake(3);sfxHit();
+      }
+      if(d.timer===100&&d.hitLanded){o.takeDamage(15,f.facing*10,-8,f);shake(10);sfxExplode();spawnParticles(o.x,o.y-20,'#FFD700',25,6)}
+      if(d.timer>=d.def.duration){f.def.color=f.def._origColor;finalSmashActive=false;finalSmashData=null}
+    }
+    else if(f.id==='red'){
+      // Herobrine possession: eyes go white, obsidian colossus blow
+      if(d.timer===1){spawnParticles(f.x,f.y-25,'#FFFFFF',15,4);f._herobrineActive=true}
+      if(d.timer===30){// dash to opponent
+        f.x=o.x-f.facing*50;
+      }
+      if(d.timer===50){// massive obsidian blow
+        const dist=Math.abs(o.x-f.x);
+        if(dist<120){d.hitLanded=true;o.takeDamage(45,f.facing*12,-10,f);shake(15);sfxExplode();
+          spawnParticles(o.x,o.y-20,'#1A0A2E',25,7);spawnParticles(o.x,o.y-20,'#FFFFFF',15,5)}
+      }
+      if(d.timer>=d.def.duration){f._herobrineActive=false;finalSmashActive=false;finalSmashData=null}
+    }
+    else if(f.id==='blue'){
+      // Potion Storm: cauldron erupts, potions rain
+      if(d.timer===1)spawnParticles(f.x,f.y,'#444',10,3);
+      if(d.timer>20&&d.timer<130&&d.timer%8===0){
+        // rain potions from above
+        const px=Math.random()*W;const pc=['#4488FF','#888888','#AA44FF','#44AA44','#FF4444','#FF8800'][Math.floor(Math.random()*6)];
+        projectiles.push(new Projectile(px,-10,0,6,6,2,f,pc));
+        spawnParticles(px,20,pc,3,2);
+      }
+      if(d.timer>=d.def.duration){finalSmashActive=false;finalSmashData=null}
+    }
+    else if(f.id==='green'){
+      // Note Block Staff: storm of musical notes
+      if(d.timer===1)spawnParticles(f.x,f.y-30,'#44FF44',15,4);
+      if(d.timer>15&&d.timer<85&&d.timer%5===0){
+        const angle=Math.atan2(o.y-20-f.y,o.x-f.x)+((Math.random()-0.5)*0.5);
+        const speed=8;const nc=['#FF4444','#44FF44','#4444FF','#FFFF44','#FF44FF','#44FFFF'][Math.floor(Math.random()*6)];
+        projectiles.push(new Projectile(f.x+f.facing*20,f.y-30,Math.cos(angle)*speed,Math.sin(angle)*speed,5,3,f,nc));
+        playSound(200+Math.random()*800,0.08,'sine',0.1);
+      }
+      if(d.timer>=d.def.duration){finalSmashActive=false;finalSmashData=null}
+    }
+    else if(f.id==='yellow'){
+      // Mega TNT Cannon: build cannon, fire giant TNT
+      if(d.timer<30){spawnParticles(f.x+f.facing*30,f.y-20,'#888',2,1)} // building sparks
+      if(d.timer===40){
+        // fire giant TNT
+        sfxExplode();
+        for(let i=0;i<5;i++){
+          projectiles.push(new Projectile(f.x+f.facing*50,f.y-30+i*8-16,f.facing*8,(-2+i)*0.5,8,4,f,'#FF4444',true));
+        }
+        shake(8);
+      }
+      if(d.timer>=d.def.duration){finalSmashActive=false;finalSmashData=null}
+    }
+    else if(f.id==='king_orange'){
+      // Minecraft Icon Staff: white void blast
+      if(d.timer===1)spawnParticles(f.x,f.y-30,'#FFD700',20,5);
+      if(d.timer===30){// void blast wave
+        const blastDir=f.facing;
+        for(let i=0;i<8;i++){
+          projectiles.push(new Projectile(f.x+blastDir*30,f.y-25,blastDir*(10+i*2),(Math.random()-0.5)*3,6,5,f,'#FFFFFF'));
+        }
+        shake(12);sfxLightning();
+      }
+      if(d.timer>=d.def.duration){finalSmashActive=false;finalSmashData=null}
+    }
+    else if(f.id==='skeleton'){
+      // Arrow Storm: skeleton army fires arrows from background
+      if(d.timer>10&&d.timer<110&&d.timer%3===0){
+        const sx=Math.random()*W;
+        projectiles.push(new Projectile(sx,-10,(Math.random()-0.5)*2,8+Math.random()*3,4,2,f,'#AAA'));
+        if(d.timer%9===0)playSound(300+Math.random()*200,0.05,'square',0.08);
+      }
+      if(d.timer>=d.def.duration){finalSmashActive=false;finalSmashData=null}
+    }
+    else if(f.id==='spider'){
+      // Web Prison: trap + spider swarm
+      if(d.timer===1){spawnParticles(o.x,o.y-20,'#DDD',15,3);o.hitstunTimer=90;o.state='hitstun';o.vx=0;o.vy=0}
+      if(d.timer>20&&d.timer<90&&d.timer%6===0){
+        // spiders attack from sides
+        const side=d.timer%12<6?-1:1;
+        o.takeDamage(4,side*2,-1,f);spawnParticles(o.x+side*15,o.y-20,'#333',4,2);sfxHit();
+      }
+      if(d.timer===90){o.takeDamage(10,f.facing*8,-6,f);shake(8);sfxExplode();spawnParticles(o.x,o.y-20,'#DDD',20,5)}
+      if(d.timer>=d.def.duration){finalSmashActive=false;finalSmashData=null}
+    }
+    else if(f.id==='enderman'){
+      // Block Storm: rips up blocks, hurls them
+      if(d.timer>10&&d.timer<100&&d.timer%4===0){
+        const bx=f.x+f.facing*20;const by=f.y-40;
+        const angle=Math.atan2(o.y-20-by,o.x-bx)+(Math.random()-0.5)*0.4;
+        projectiles.push(new Projectile(bx,by,Math.cos(angle)*10,Math.sin(angle)*10,6,3,f,'#5C3A1E'));
+        spawnParticles(bx,by,'#9B59B6',3,2);
+        if(d.timer%8===0)sfxHit();
+      }
+      if(d.timer===100){shake(8);sfxExplode();spawnParticles(f.x,f.y-20,'#9B59B6',20,5)}
+      if(d.timer>=d.def.duration){finalSmashActive=false;finalSmashData=null}
+    }
+    else{// fallback
+      if(d.timer>=d.def.duration){finalSmashActive=false;finalSmashData=null}
+    }
+  }
+}
+
+function drawFinalSmash(){
+  if(!finalSmashActive||!finalSmashData)return;
+  const d=finalSmashData;const f=d.fighter;
+
+  // Name banner at top
+  if(d.timer<40){
+    const alpha=Math.min(1,d.timer/15);
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,H/2-40,W,80);
+    drawText(d.def.name.toUpperCase(),W/2,H/2+5,32,f.def.color);
+    ctx.globalAlpha=1;
+  }
+
+  // Red: Herobrine white eyes
+  if(f.id==='red'&&f._herobrineActive){
+    ctx.fillStyle='#FFFFFF';
+    ctx.fillRect(f.x+f.facing*3-3,f.y-53,4,4);ctx.fillRect(f.x+f.facing*6-2,f.y-53,4,4);
+    // dark aura
+    ctx.strokeStyle='rgba(50,0,80,0.4)';ctx.lineWidth=2;
+    for(let i=0;i<5;i++){const t=Date.now()/200+i;ctx.beginPath();ctx.moveTo(f.x+Math.sin(t)*20,f.y-60+Math.cos(t)*15);ctx.lineTo(f.x+Math.sin(t+1)*25,f.y-65+Math.cos(t+1)*18);ctx.stroke()}
+  }
+
+  // King Orange void effect
+  if(f.id==='king_orange'&&d.timer>30&&d.timer<70){
+    ctx.fillStyle=`rgba(255,255,255,${0.3*Math.sin((d.timer-30)/40*Math.PI)})`;ctx.fillRect(0,0,W,H);
+  }
+}
+
 // ===== AI CONTROLLER =====
 class AIController{
   constructor(difficulty=0.5){this.difficulty=difficulty;this.actionTimer=0}
@@ -939,6 +1206,19 @@ class AIController{
       fighter.vx=-dir*fighter.def.speed;this.actionTimer=8;
     }
     for(const item of activeItems){if(Math.abs(item.x-fighter.x)<60&&Math.abs(item.y-fighter.y)<40)fighter.vx=(item.x-fighter.x)*0.1}
+    // AI: Use Final Smash when close to opponent
+    if(fighter.hasSmash&&dist<120&&Math.random()<agg*0.6){
+      const opp=opponent;if(opp)triggerFinalSmash(fighter,opp);
+    }
+    // AI: Chase smash ball
+    if(smashBall&&smashBall.active&&!fighter.hasSmash){
+      const sbDist=Math.abs(smashBall.x-fighter.x);
+      if(sbDist<150){
+        fighter.vx=(smashBall.x-fighter.x)*0.08;
+        if(Math.abs(smashBall.y-(fighter.y-20))<50&&sbDist<50)fighter.startAttack('neutral');
+        if(smashBall.y<fighter.y-60&&fighter.grounded){fighter.vy=-fighter.def.jumpForce;fighter.grounded=false;fighter.jumpCount++}
+      }
+    }
   }
 }
 
@@ -1243,6 +1523,19 @@ function drawHUD(){
       const px=f.playerNum===1?160:W-160;
       drawText('Next: '+pot,px,50,10,pc);
     }
+    // Smash indicator
+    if(f.hasSmash){
+      const sx=f.playerNum===1?20:W-120;
+      const t=Date.now()/200;
+      ctx.fillStyle=`rgba(255,215,0,${0.6+Math.sin(t)*0.3})`;ctx.fillRect(sx,42,100,16);
+      ctx.fillStyle='#000';ctx.font='bold 11px monospace';ctx.textAlign='center';ctx.fillText('FINAL SMASH!',sx+50,54);
+    }
+    // Champion form timer
+    if(f.championForm){
+      const sx=f.playerNum===1?20:W-120;
+      const secs=Math.ceil(f.championTimer/60);
+      drawText('CHAMPION: '+secs+'s',sx+50,70,10,'#FF44FF');
+    }
   });
 }
 
@@ -1332,7 +1625,7 @@ function drawVictory(){
   if(winner.id==='king_orange'){const t=Date.now()/150;for(let i=0;i<12;i++){ctx.fillStyle=`rgba(255,200,50,${0.2+Math.sin(t+i)*0.2})`;ctx.fillRect(W/2+Math.cos(t+i*0.5)*100-3,H/2-30+Math.sin(t+i*0.5)*60,6,6)}}
 
   drawText(winner.def.name+' WINS!',W/2,H/2+90,36,c);
-  const quotes={second_coming:'The crafter prevails!',red:'RAGE!',blue:'Calculated.',green:'Hooked!',yellow:'BOOM!',purple:'Flying fists!',king_orange:'/gamemode creative'};
+  const quotes={second_coming:'The crafter prevails!',red:'RAGE!',blue:'Calculated.',green:'Hooked!',yellow:'BOOM!',purple:'Flying fists!',king_orange:'/gamemode creative',skeleton:'Rattled!',spider:'Caught in my web!',enderman:'...'};
   drawText(quotes[winner.id]||'Victory!',W/2,H/2+125,16,'#aaa');
 
   victoryTimer--;
@@ -1397,6 +1690,7 @@ function startFight(p1Char,p2Char,stageIdx,p2IsCPU=true,cpuDiff=0.5){
   fighters=[new Fighter(p1Char,sx1,1,1),new Fighter(p2Char,sx2,-1,2)];
   fighters[1].ai=p2IsCPU?new AIController(cpuDiff):null;
   projectiles=[];activeItems=[];particles=[];plantedBombs=[];
+  smashBall=null;smashBallTimer=600+Math.random()*300;finalSmashActive=false;finalSmashData=null;
   roundTimer=5400;itemSpawnTimer=300;countdownTimer=180;gameState=S.FIGHTING;
 }
 
@@ -1415,8 +1709,14 @@ function handleFighterInput(f,up,down,left,right,attack){
   if(!up)f.gliding=false;
   if(down&&!f.grounded)f.vy=Math.min(f.vy+1,12);
   if(attack&&!f._attackHeld){
-    let dir='neutral';if(up)dir='up';else if(down)dir='down';else if(left||right)dir='forward';
-    f.startAttack(dir);f._attackHeld=true;
+    // Final Smash trigger: neutral attack (no direction) when hasSmash
+    if(f.hasSmash&&!up&&!down&&!left&&!right){
+      const opp=fighters.find(o=>o!==f);if(opp)triggerFinalSmash(f,opp);
+    }else{
+      let dir='neutral';if(up)dir='up';else if(down)dir='down';else if(left||right)dir='forward';
+      f.startAttack(dir);
+    }
+    f._attackHeld=true;
   }
   if(!attack)f._attackHeld=false;
 }
@@ -1425,6 +1725,27 @@ function handleFighterInput(f,up,down,left,right,attack){
 function update(){
   if(gameState===S.FIGHTING){
     if(countdownTimer>0){countdownTimer--;return}
+
+    // Final Smash cinematic freeze - skip normal updates during cinematic
+    if(finalSmashActive){
+      updateFinalSmash();updateParticles();
+      // still update projectiles spawned by Final Smash
+      for(let i=projectiles.length-1;i>=0;i--){
+        const p=projectiles[i];p.update();
+        if(p.life<=0||p.x<-50||p.x>W+50||p.y>H+50){projectiles.splice(i,1);continue}
+        fighters.forEach(f=>{
+          if(f!==p.owner&&f.invincible<=0&&Math.abs(p.x-f.x)<20&&Math.abs(p.y-(f.y-25))<30){
+            if(p.explosive){sfxExplode();shake(6);spawnParticles(p.x,p.y,'#FF4444',12,5);
+              fighters.forEach(ff=>{if(Math.abs(ff.x-p.x)<60&&Math.abs(ff.y-p.y)<50)ff.takeDamage(p.dmg,(ff.x-p.x)*0.3,-5,p.owner)});
+            }else{f.takeDamage(p.dmg,p.vx*0.5,-3,p.owner)}
+            projectiles.splice(i,1);
+          }
+        });
+      }
+      if(shakeTime>0)shakeTime--;else shakeAmount=0;
+      return;
+    }
+
     roundTimer--;
     handleFighterInput(fighters[0],keys['ArrowUp'],keys['ArrowDown'],keys['ArrowLeft'],keys['ArrowRight'],keys['Space']);
     if(fighters[1].ai)fighters[1].ai.update(fighters[1],fighters[0],currentStage.platforms);
@@ -1478,6 +1799,22 @@ function update(){
       });
     }
 
+    // Smash Ball spawning
+    smashBallTimer--;
+    if(!smashBall&&smashBallTimer<=0&&!fighters[0].hasSmash&&!fighters[1].hasSmash){
+      smashBall=new SmashBall();smashBallTimer=900+Math.random()*600; // respawn 15-25 sec later
+    }
+    // Smash Ball update & hit detection
+    if(smashBall&&smashBall.active){
+      smashBall.update();
+      fighters.forEach(f=>{
+        if(f.state==='attack'&&f.attackPhase==='active'){
+          const dx=smashBall.x-f.x,dy=smashBall.y-(f.y-20);
+          if(Math.sqrt(dx*dx+dy*dy)<50){smashBall.hit(f)}
+        }
+      });
+    }
+
     // death check
     fighters.forEach(f=>{if(f.y>currentStage.deathY||f.x<-100||f.x>W+100)f.hp=0});
     // training: don't let fighters die
@@ -1504,8 +1841,10 @@ function draw(){
   else if(gameState===S.PAUSE){drawStage(currentStage);fighters.forEach(f=>f.draw());drawHUD();drawPause()}
   else if(gameState===S.FIGHTING||gameState===S.VICTORY){
     drawStage(currentStage);activeItems.forEach(it=>it.draw());
+    if(smashBall&&smashBall.active)smashBall.draw();
     plantedBombs.forEach(b=>b.draw());projectiles.forEach(p=>p.draw());
     drawParticles();fighters.forEach(f=>f.draw());drawHUD();drawCountdown();
+    drawFinalSmash();
     if(gameState===S.VICTORY)drawVictory();
   }
   ctx.restore();

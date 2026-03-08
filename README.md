@@ -10,11 +10,13 @@ Or play on GitHub Pages: https://zebra-rancher.github.io/minecraft-stick-fighter
 
 ## Features
 
-- **7 playable characters** with unique movesets and Minecraft weapons
+- **10 playable characters** with unique movesets and Minecraft weapons
+- **3 Minecraft mob fighters** with square heads and unique proportions (Skeleton, Spider, Enderman)
 - **5 Minecraft-themed stages** (Plains, Nether Fortress, The End, Jungle, Village)
 - **Multiple game modes**: VS CPU, 1v1 Local, Story Mode, Training
+- **Final Smash system** - break the floating Smash Ball to unleash a devastating super move
 - **Item drops**: Golden Apples, Potions, TNT, Ender Pearls, and more
-- **Character unlocks** through Story Mode progression (3 unlockable fighters)
+- **Character unlocks** through Story Mode progression (5 unlockable fighters)
 - **Combo attacks** using directional inputs + attack button
 - **Enchanted weapons** with pixel-art rendering and shimmer effects
 - **Training stage** with walls so you can't fall off
@@ -30,7 +32,11 @@ Or play on GitHub Pages: https://zebra-rancher.github.io/minecraft-stick-fighter
 
 Combine directions with attack for different moves (up+attack = uppercut, forward+attack = thrust, etc.)
 
+**Final Smash**: When you have the Smash Ball power (golden glow), press attack with NO direction held to trigger your Final Smash!
+
 ## Characters
+
+### Stick Fighters
 
 | Character | Color | Weapon | Style |
 |-----------|-------|--------|-------|
@@ -41,6 +47,31 @@ Combine directions with attack for different moves (up+attack = uppercut, forwar
 | Yellow | Yellow | TNT + Redstone | Demolitionist - explosions and chain reactions (Unlockable) |
 | Purple | Purple | Elytra + Fists | Elytra Brawler - aerial glide with heavy punches (Unlockable) |
 | King Orange | Gold | Command Block | Command Block Overlord - /commands and golden energy (Unlockable) |
+
+### Minecraft Mobs
+
+| Character | Appearance | Weapon | Style |
+|-----------|------------|--------|-------|
+| Skeleton | Square head, bone limbs | Enchanted Bow | Sniper - ranged focus, rapid arrows, fragile (1.2x damage taken) (Unlockable) |
+| Spider | Wide body (1.3x), 6 legs | Fangs + Web | Grappler - web grab, venom, wall cling passive (Unlockable) |
+| Enderman | Tall (1.35x), purple eyes | Ender blocks | Teleporter - block attacks, 15% auto-dodge, territorial (Unlockable) |
+
+## Final Smashes
+
+Break the floating Smash Ball (3 hits) to charge your super move!
+
+| Character | Final Smash | Type |
+|-----------|-------------|------|
+| Second Coming | Awakened Form Rush | Cinematic - golden transformation, rapid combo |
+| Red | Herobrine Possession | Cinematic - white eyes, obsidian colossus slam |
+| Blue | Potion Storm | Cinematic - giant cauldron, potions rain from sky |
+| Green | Note Block Staff | Cinematic - musical note barrage |
+| Yellow | Mega TNT Cannon | Cinematic - builds cannon, fires TNT volley |
+| Purple | Champion Data Form | Transformation - 12 sec of 2x strength, 1.5x speed, 3 jumps |
+| King Orange | Minecraft Icon Staff | Cinematic - white void blast |
+| Skeleton | Arrow Storm | Cinematic - arrows rain across entire stage |
+| Spider | Web Prison | Cinematic - wraps opponent, spider swarm attacks |
+| Enderman | Block Storm | Cinematic - rips up blocks and hurls them at opponent |
 
 ## Stages
 
@@ -55,7 +86,7 @@ Combine directions with attack for different moves (up+attack = uppercut, forwar
 
 ## Story Mode
 
-Fight through 7 battles to unlock all characters:
+Fight through 10 battles to unlock all characters:
 1. vs Red (Plains)
 2. vs Blue (Jungle)
 3. vs Green (Village)
@@ -63,6 +94,9 @@ Fight through 7 battles to unlock all characters:
 5. vs Purple (The End) - **Unlocks Purple**
 6. vs King Orange (Nether)
 7. vs King Orange final (The End) - **Unlocks King Orange**
+8. vs Skeleton (Plains) - **Unlocks Skeleton**
+9. vs Spider (Jungle) - **Unlocks Spider**
+10. vs Enderman (The End) - **Unlocks Enderman**
 
 ## Win Conditions
 
