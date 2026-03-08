@@ -2323,29 +2323,30 @@ function drawCampSelect(){
   ctx.fillStyle='#1a0a2e';ctx.fillRect(0,0,W,H);
   drawText('TRAINING CAMP',W/2,40,32,'#FFD700');
   drawText('Complete minigames to unlock bonus attacks!',W/2,70,13,'#aaa');
-  const startX=70,spacing=125;
+  const spacing=92,totalW=spacing*(charOrder.length-1),startX=W/2-totalW/2;
+  const cw=80,ch=140;
   charOrder.forEach((id,i)=>{
-    const def=CHAR_DEFS[id];const x=startX+i*spacing;const y=180;
+    const def=CHAR_DEFS[id];const x=startX+i*spacing;const y=190;
     const locked=def.locked&&!saveData.unlocked.includes(id);
     const completed=saveData.bonusUnlocked.includes(id);
     const sel=i===campSelect;
-    drawBox(x-50,y-60,100,160,locked?'#222':completed?'#1a3a1a':'#2a2a3e',sel?'#FFD700':'#444');
-    if(sel)drawBox(x-50,y-60,100,160,'rgba(255,215,0,0.1)','#FFD700');
-    if(locked){drawText('?',x,y+10,40,'#555');drawText('LOCKED',x,y+60,12,'#555')}
+    drawBox(x-cw/2,y-ch/2,cw,ch,locked?'#222':completed?'#1a3a1a':'#2a2a3e',sel?'#FFD700':'#444');
+    if(sel)drawBox(x-cw/2,y-ch/2,cw,ch,'rgba(255,215,0,0.1)','#FFD700');
+    if(locked){drawText('?',x,y,36,'#555');drawText('LOCKED',x,y+50,10,'#555')}
     else{
-      ctx.fillStyle=def.color;ctx.beginPath();ctx.arc(x,y-20,12,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle=def.color;ctx.lineWidth=3;ctx.lineCap='round';
-      ctx.beginPath();ctx.moveTo(x,y-8);ctx.lineTo(x,y+20);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-15,y+15);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+15,y+15);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(x,y+20);ctx.lineTo(x-10,y+40);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(x,y+20);ctx.lineTo(x+10,y+40);ctx.stroke();
-      if(id==='king_orange'){ctx.fillStyle='#FFD700';ctx.fillRect(x-7,y-38,14,6);ctx.fillRect(x-9,y-42,4,10);ctx.fillRect(x-1,y-44,4,12);ctx.fillRect(x+5,y-42,4,10)}
-      if(id==='purple'){ctx.fillStyle='#AA66CC';ctx.beginPath();ctx.moveTo(x-6,y-8);ctx.lineTo(x-20,y-18);ctx.lineTo(x-16,y-4);ctx.fill();ctx.beginPath();ctx.moveTo(x+6,y-8);ctx.lineTo(x+20,y-18);ctx.lineTo(x+16,y-4);ctx.fill()}
-      drawText(def.name,x,y+65,10,'#fff');
+      ctx.fillStyle=def.color;ctx.beginPath();ctx.arc(x,y-25,10,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=def.color;ctx.lineWidth=2.5;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(x,y-15);ctx.lineTo(x,y+10);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x,y-5);ctx.lineTo(x-12,y+8);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x,y-5);ctx.lineTo(x+12,y+8);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x,y+10);ctx.lineTo(x-8,y+28);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x,y+10);ctx.lineTo(x+8,y+28);ctx.stroke();
+      if(id==='king_orange'){ctx.fillStyle='#FFD700';ctx.fillRect(x-6,y-40,12,5);ctx.fillRect(x-8,y-43,3,8);ctx.fillRect(x-1,y-45,3,10);ctx.fillRect(x+5,y-43,3,8)}
+      if(id==='purple'){ctx.fillStyle='#AA66CC';ctx.beginPath();ctx.moveTo(x-5,y-15);ctx.lineTo(x-16,y-22);ctx.lineTo(x-13,y-10);ctx.fill();ctx.beginPath();ctx.moveTo(x+5,y-15);ctx.lineTo(x+16,y-22);ctx.lineTo(x+13,y-10);ctx.fill()}
+      drawText(def.name,x,y+48,9,'#fff');
       const mg=MINIGAME_DEFS[id];
-      if(mg)drawText(mg.name,x,y+80,8,completed?'#2ECC71':'#888');
-      if(completed)drawText('\u2713',x,y-45,20,'#2ECC71');
+      if(mg)drawText(mg.name,x,y+60,7,completed?'#2ECC71':'#888');
+      if(completed)drawText('\u2713',x,y-50,18,'#2ECC71');
     }
   });
   // info panel
