@@ -529,6 +529,137 @@ const TRAINING_STAGE={name:'Training',bg:'#1a1a2e',platforms:[
 ],deathY:H+200,walls:true,
 bgElements:[{type:'grid'}]};
 
+// ===== STAGE HAZARDS =====
+let stageHazards=[];
+let hazardTimer=0;
+const HAZARD_DEFS={
+  Plains:{interval:360,spawn(){
+    // Lightning - warning flash then bolt
+    const x=100+Math.random()*(W-200);
+    stageHazards.push({type:'lightning',x,warn:60,life:75,dmg:12,active:false});
+  }},
+  'Nether Fortress':{interval:200,spawn(){
+    // Ghast fireball from top
+    const x=80+Math.random()*(W-160);
+    stageHazards.push({type:'fireball',x,y:-10,vy:3+Math.random()*2,life:200,dmg:10,radius:8});
+  }},
+  'The End':{interval:300,spawn(){
+    // Shulker bullet - homing purple orb rises from void edge
+    const side=Math.random()>0.5;
+    const x=side?W-40:40;
+    stageHazards.push({type:'shulker',x,y:H+10,vx:side?-1.5:1.5,vy:-2.5,life:180,dmg:8,radius:7});
+  }},
+  Jungle:{interval:240,spawn(){
+    // Falling coconuts from canopy
+    const x=60+Math.random()*(W-120);
+    stageHazards.push({type:'coconut',x,y:-10,vy:0,life:200,dmg:7,radius:6});
+  }},
+  Village:{interval:420,spawn(){
+    // Iron Golem charges across ground
+    const side=Math.random()>0.5;
+    stageHazards.push({type:'golem',x:side?-40:W+40,y:H-70,vx:side?3:-3,life:200,dmg:15,radius:25});
+  }}
+};
+function updateHazards(){
+  if(!currentStage||currentStage.name==='Training')return;
+  const hd=HAZARD_DEFS[currentStage.name];
+  if(!hd)return;
+  hazardTimer--;
+  if(hazardTimer<=0){hd.spawn();hazardTimer=hd.interval+Math.floor(Math.random()*120)}
+  for(let i=stageHazards.length-1;i>=0;i--){
+    const h=stageHazards[i];h.life--;
+    if(h.life<=0){stageHazards.splice(i,1);continue}
+    if(h.type==='lightning'){
+      h.warn--;
+      if(h.warn<=0&&!h.active){
+        h.active=true;shake(4);
+        // damage fighters near the bolt
+        fighters.forEach(f=>{if(Math.abs(f.x-h.x)<30&&f.invincible<=0){f.takeDamage(h.dmg,0,-6,null);spawnParticles(f.x,f.y-20,'#FFE44D',8,3)}});
+      }
+    }
+    if(h.type==='fireball'){
+      h.y+=h.vy;
+      if(h.y>H){stageHazards.splice(i,1);continue}
+      fighters.forEach(f=>{if(Math.abs(f.x-h.x)<20&&Math.abs(f.y-25-h.y)<20&&f.invincible<=0){
+        f.takeDamage(h.dmg,(f.x-h.x)*0.2,-4,null);sfxExplode();spawnParticles(h.x,h.y,'#FF4400',10,4);stageHazards.splice(i,1)}});
+    }
+    if(h.type==='shulker'){
+      h.x+=h.vx;h.y+=h.vy;
+      // gentle homing toward nearest fighter
+      let nearest=null,nd=9999;
+      fighters.forEach(f=>{const d=Math.abs(f.x-h.x)+Math.abs(f.y-h.y);if(d<nd){nd=d;nearest=f}});
+      if(nearest){h.vx+=(nearest.x-h.x)*0.003;h.vy+=(nearest.y-25-h.y)*0.003}
+      if(h.x<-60||h.x>W+60||h.y<-60){stageHazards.splice(i,1);continue}
+      fighters.forEach(f=>{if(Math.abs(f.x-h.x)<18&&Math.abs(f.y-25-h.y)<18&&f.invincible<=0){
+        f.takeDamage(h.dmg,h.vx*2,-3,null);spawnParticles(h.x,h.y,'#AA44FF',8,3);stageHazards.splice(i,1)}});
+    }
+    if(h.type==='coconut'){
+      h.vy+=0.15; // gravity
+      h.y+=h.vy;
+      if(h.y>H){stageHazards.splice(i,1);continue}
+      // bounce off platforms
+      currentStage.platforms.forEach(p=>{if(h.y>=p.y&&h.y-h.vy<p.y&&h.x>p.x&&h.x<p.x+p.w){h.y=p.y;h.vy=-h.vy*0.5;if(Math.abs(h.vy)<1){stageHazards.splice(i,1)}}});
+      fighters.forEach(f=>{if(Math.abs(f.x-h.x)<16&&Math.abs(f.y-20-h.y)<20&&f.invincible<=0){
+        f.takeDamage(h.dmg,0,-3,null);spawnParticles(h.x,h.y,'#8B6914',6,2);stageHazards.splice(i,1)}});
+    }
+    if(h.type==='golem'){
+      h.x+=h.vx;
+      if(h.x<-80||h.x>W+80){stageHazards.splice(i,1);continue}
+      fighters.forEach(f=>{if(Math.abs(f.x-h.x)<30&&Math.abs(f.y-h.y)<40&&f.invincible<=0){
+        f.takeDamage(h.dmg,h.vx*3,-6,null);shake(6);spawnParticles(f.x,f.y-20,'#AAA',10,4)}});
+    }
+  }
+}
+function drawHazards(){
+  stageHazards.forEach(h=>{
+    if(h.type==='lightning'){
+      if(h.warn>0){
+        // warning: flickering yellow line
+        if(Math.floor(h.warn/4)%2===0){
+          ctx.strokeStyle='rgba(255,228,77,0.4)';ctx.lineWidth=2;ctx.setLineDash([4,4]);
+          ctx.beginPath();ctx.moveTo(h.x,0);ctx.lineTo(h.x,H);ctx.stroke();ctx.setLineDash([]);
+          drawText('!',h.x,30,20,'#FFE44D');
+        }
+      }else if(h.active){
+        // bolt
+        ctx.strokeStyle='#FFE44D';ctx.lineWidth=4;ctx.shadowColor='#FFE44D';ctx.shadowBlur=15;
+        ctx.beginPath();ctx.moveTo(h.x,0);
+        let ly=0;for(let s=0;s<6;s++){ly+=H/6;ctx.lineTo(h.x+(Math.random()-0.5)*30,ly)}
+        ctx.stroke();ctx.shadowBlur=0;
+        // ground flash
+        ctx.fillStyle='rgba(255,228,77,0.3)';ctx.fillRect(h.x-40,H-50,80,50);
+      }
+    }
+    if(h.type==='fireball'){
+      ctx.fillStyle='#FF4400';ctx.beginPath();ctx.arc(h.x,h.y,h.radius,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#FFD700';ctx.beginPath();ctx.arc(h.x,h.y,h.radius*0.5,0,Math.PI*2);ctx.fill();
+      // tail
+      ctx.fillStyle='rgba(255,68,0,0.4)';ctx.beginPath();ctx.arc(h.x,h.y-10,5,0,Math.PI*2);ctx.fill();
+    }
+    if(h.type==='shulker'){
+      const pulse=Math.sin(Date.now()/100)*2;
+      ctx.fillStyle='#AA44FF';ctx.beginPath();ctx.arc(h.x,h.y,h.radius+pulse,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#DD88FF';ctx.beginPath();ctx.arc(h.x,h.y,3,0,Math.PI*2);ctx.fill();
+    }
+    if(h.type==='coconut'){
+      ctx.fillStyle='#8B6914';ctx.beginPath();ctx.arc(h.x,h.y,h.radius,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#6B4914';ctx.beginPath();ctx.arc(h.x,h.y,3,0,Math.PI*2);ctx.fill();
+    }
+    if(h.type==='golem'){
+      // Iron Golem - chunky rectangle body
+      const gx=h.x,gy=h.y;
+      ctx.fillStyle='#AAA';ctx.fillRect(gx-14,gy-35,28,35); // body
+      ctx.fillStyle='#999';ctx.fillRect(gx-10,gy-48,20,16); // head
+      ctx.fillStyle='#222';ctx.fillRect(gx-7,gy-44,4,4);ctx.fillRect(gx+3,gy-44,4,4); // eyes
+      ctx.fillStyle='#888';ctx.fillRect(gx-20,gy-30,8,25);ctx.fillRect(gx+12,gy-30,8,25); // arms
+      ctx.fillStyle='#777';ctx.fillRect(gx-10,gy,8,12);ctx.fillRect(gx+2,gy,8,12); // legs
+      // rose
+      ctx.fillStyle='#F44';ctx.fillRect(gx+14,gy-28,3,6);
+      ctx.fillStyle='#4A4';ctx.fillRect(gx+14,gy-22,3,4);
+    }
+  });
+}
+
 // ===== ITEM DEFINITIONS =====
 const ITEM_DEFS=[
   {name:'Golden Apple',color:'#FFD700',effect:'heal',value:25,icon:'apple'},
@@ -2470,7 +2601,8 @@ function startFight(p1Char,p2Char,stageIdx,p2IsCPU=true,cpuDiff=0.5){
   const sx1=stage.platforms[0].x+80,sx2=stage.platforms[0].x+stage.platforms[0].w-80;
   fighters=[new Fighter(p1Char,sx1,1,1),new Fighter(p2Char,sx2,-1,2)];
   fighters[1].ai=p2IsCPU?new AIController(cpuDiff):null;
-  projectiles=[];activeItems=[];particles=[];plantedBombs=[];
+  projectiles=[];activeItems=[];particles=[];plantedBombs=[];stageHazards=[];
+  hazardTimer=180+Math.floor(Math.random()*120);
   smashBall=null;smashBallTimer=300+Math.random()*180;finalSmashActive=false;finalSmashData=null;
   roundTimer=5400;itemSpawnTimer=300;countdownTimer=180;gameState=S.FIGHTING;
 }
@@ -2563,6 +2695,9 @@ function update(){
       }
     }
 
+    // stage hazards
+    if(countdownTimer<=0)updateHazards();
+
     // items
     itemSpawnTimer--;
     if(itemSpawnTimer<=0&&activeItems.length<3){
@@ -2629,7 +2764,7 @@ function draw(){
   else if(gameState===S.STORY_INTRO)drawStoryIntro();
   else if(gameState===S.PAUSE){drawStage(currentStage);fighters.forEach(f=>f.draw());drawHUD();drawPause()}
   else if(gameState===S.FIGHTING||gameState===S.VICTORY){
-    drawStage(currentStage);activeItems.forEach(it=>it.draw());
+    drawStage(currentStage);drawHazards();activeItems.forEach(it=>it.draw());
     if(smashBall&&smashBall.active)smashBall.draw();
     plantedBombs.forEach(b=>b.draw());projectiles.forEach(p=>p.draw());
     drawParticles();fighters.forEach(f=>f.draw());drawHUD();drawCountdown();
