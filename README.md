@@ -30,13 +30,13 @@ Or play on GitHub Pages: https://zebra-rancher.github.io/minecraft-stick-fighter
 | Jump | Up Arrow | W |
 | Crouch | Down Arrow | S |
 | Attack | Space | E |
-| Bonus Attack | Q | R |
+| Bonus Attack | M | R |
 
 Combine directions with attack for different moves (up+attack = uppercut, forward+attack = thrust, etc.)
 
 **Final Smash**: When you have the Smash Ball power (golden glow), press attack with NO direction held to trigger your Final Smash!
 
-**Bonus Attack**: Complete a character's Training Camp minigame to unlock their bonus attack. Press Q (P1) or R (P2) during battle to use it!
+**Bonus Attack**: Complete a character's Training Camp minigame to unlock their bonus attack. Press M (P1) or R (P2) during battle to use it!
 
 ## Characters
 

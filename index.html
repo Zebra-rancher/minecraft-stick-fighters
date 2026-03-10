@@ -1925,7 +1925,7 @@ function drawMinigame(){
     drawText('SUCCESS!',W/2,180,48,'#2ECC71');
     const charDef=CHAR_DEFS[minigameChar];
     drawText(`${charDef.name} learned: ${charDef.bonusAttack.name}!`,W/2,250,22,'#FFD700');
-    drawText('New attack unlocked! Use Q (P1) or R (P2) in battle!',W/2,290,14,'#aaa');
+    drawText('New attack unlocked! Use M (P1) or R (P2) in battle!',W/2,290,14,'#aaa');
     drawText('Press Space to continue',W/2,380,16,'#fff');
   }else if(minigamePhase==='complete_fail'){
     ctx.fillStyle='#2e0a0a';ctx.fillRect(0,0,W,H);
@@ -2263,7 +2263,7 @@ function drawMainMenu(){
   ctx.globalAlpha=0.5+Math.sin(menuBlink)*0.5;drawText('Press SPACE or ENTER',W/2,480,14,'#aaa');ctx.globalAlpha=1;
   const opts=['VS CPU','1v1 Local','Story Mode','Training Camp','Training','Credits'];
   opts.forEach((o,i)=>{const y=210+i*40;const sel=i===menuSelection;if(sel){drawBox(W/2-120,y-18,240,34,'#2a1a4e','#5DE8E0');drawText('> '+o+' <',W/2,y+2,20,'#5DE8E0')}else drawText(o,W/2,y+2,18,'#888')});
-  drawText('Arrow Keys + Space = P1 | WASD + E = P2 | Q/R = Bonus Attack',W/2,H-20,11,'#555');
+  drawText('Arrow Keys + Space = P1 | WASD + E = P2 | M/R = Bonus Attack',W/2,H-20,11,'#555');
 }
 
 function drawCharSelect(){
@@ -2468,7 +2468,7 @@ function handleFighterInput(f,up,down,left,right,attack,bonusAttack){
   if(f.def.passive==='elytra'&&up&&!f.grounded&&f.jumpCount>=f.jumps)f.gliding=true;
   if(!up)f.gliding=false;
   if(down&&!f.grounded)f.vy=Math.min(f.vy+1,12);
-  // Bonus attack (Q/R key)
+  // Bonus attack (M/R key)
   if(bonusAttack&&!f._bonusHeld&&saveData.bonusUnlocked.includes(f.id)){
     f.startAttack('bonus');f._bonusHeld=true;
   }
@@ -2513,7 +2513,7 @@ function update(){
     }
 
     roundTimer--;
-    handleFighterInput(fighters[0],keys['ArrowUp'],keys['ArrowDown'],keys['ArrowLeft'],keys['ArrowRight'],keys['Space'],keys['KeyQ']);
+    handleFighterInput(fighters[0],keys['ArrowUp'],keys['ArrowDown'],keys['ArrowLeft'],keys['ArrowRight'],keys['Space'],keys['KeyM']);
     if(fighters[1].ai)fighters[1].ai.update(fighters[1],fighters[0],currentStage.platforms);
     else handleFighterInput(fighters[1],keys['KeyW'],keys['KeyS'],keys['KeyA'],keys['KeyD'],keys['KeyE'],keys['KeyR']);
     fighters.forEach((f,i)=>f.update(currentStage.platforms,fighters[1-i],currentStage));
