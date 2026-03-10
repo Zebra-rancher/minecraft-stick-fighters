@@ -428,73 +428,94 @@ const CHAR_DEFS={
 // ===== STAGE DEFINITIONS =====
 const STAGE_DEFS=[
   {name:'Plains',bg:'#87CEEB',platforms:[
-    // full ground
-    {x:0,y:H-40,w:W,h:40,color:'#6B9B3A'},
-    // lower platforms
-    {x:60,y:H-140,w:160,h:20,color:'#8B6914'},
-    {x:380,y:H-130,w:200,h:20,color:'#8B6914'},
-    {x:720,y:H-150,w:160,h:20,color:'#8B6914'},
-    // mid platform
-    {x:430,y:H-250,w:100,h:15,color:'#8B6914'},
-    // top platform
-    {x:410,y:H-340,w:60,h:12,color:'#8B6914'}
+    // wide rolling ground with a gap in the middle
+    {x:0,y:H-40,w:380,h:40,color:'#6B9B3A'},
+    {x:580,y:H-40,w:380,h:40,color:'#6B9B3A'},
+    // hill on left
+    {x:40,y:H-120,w:200,h:20,color:'#8B6914'},
+    // hill on right
+    {x:700,y:H-110,w:220,h:20,color:'#8B6914'},
+    // center floating log
+    {x:390,y:H-180,w:180,h:18,color:'#8B6914'},
+    // tree branch platforms
+    {x:160,y:H-250,w:100,h:14,color:'#6B9B3A'},
+    {x:680,y:H-270,w:110,h:14,color:'#6B9B3A'},
+    // high center perch
+    {x:430,y:H-340,w:80,h:12,color:'#8B6914'}
   ],deathY:H+100,
   trees:[{x:120,h:80},{x:820,h:70}],
   bgElements:[{type:'cloud',x:100,y:60},{type:'cloud',x:400,y:40},{type:'cloud',x:700,y:80},{type:'sun',x:840,y:60}]},
 
   {name:'Nether Fortress',bg:'#330000',platforms:[
-    // full ground (nether brick)
-    {x:0,y:H-40,w:W,h:40,color:'#722F37'},
-    // lower platforms
-    {x:60,y:H-140,w:160,h:20,color:'#5C2626'},
-    {x:380,y:H-130,w:200,h:20,color:'#5C2626'},
-    {x:720,y:H-150,w:160,h:20,color:'#5C2626'},
-    // mid platform
-    {x:430,y:H-250,w:100,h:15,color:'#5C2626'},
-    // top platform
-    {x:410,y:H-340,w:60,h:12,color:'#5C2626'}
+    // broken ground with lava gaps
+    {x:0,y:H-40,w:260,h:40,color:'#722F37'},
+    {x:350,y:H-40,w:260,h:40,color:'#722F37'},
+    {x:700,y:H-40,w:260,h:40,color:'#722F37'},
+    // fortress walkways - staircase left
+    {x:30,y:H-130,w:140,h:22,color:'#5C2626'},
+    {x:100,y:H-220,w:130,h:22,color:'#5C2626'},
+    // fortress walkways - staircase right
+    {x:780,y:H-130,w:140,h:22,color:'#5C2626'},
+    {x:720,y:H-220,w:130,h:22,color:'#5C2626'},
+    // center bridge
+    {x:340,y:H-160,w:280,h:20,color:'#5C2626'},
+    // high lookout
+    {x:420,y:H-300,w:120,h:16,color:'#5C2626'}
   ],deathY:H+100,lava:true,
   bgElements:[{type:'lava',y:H-20},{type:'ghast',x:150,y:100},{type:'ghast',x:750,y:150}]},
 
   {name:'The End',bg:'#0D0015',platforms:[
-    // full ground (end stone)
-    {x:0,y:H-40,w:W,h:40,color:'#D4CC8E'},
-    // lower platforms
-    {x:60,y:H-140,w:160,h:25,color:'#C4BC7E'},
-    {x:380,y:H-130,w:200,h:25,color:'#C4BC7E'},
-    {x:720,y:H-150,w:160,h:25,color:'#C4BC7E'},
-    // mid platform
-    {x:430,y:H-250,w:100,h:15,color:'#C4BC7E'},
-    // top platform
-    {x:410,y:H-340,w:60,h:12,color:'#C4BC7E'}
+    // floating islands - no full ground
+    {x:100,y:H-60,w:220,h:35,color:'#D4CC8E'},
+    {x:640,y:H-60,w:220,h:35,color:'#D4CC8E'},
+    // mid floating chunks
+    {x:360,y:H-130,w:240,h:28,color:'#C4BC7E'},
+    // side ledges
+    {x:20,y:H-190,w:140,h:22,color:'#C4BC7E'},
+    {x:800,y:H-200,w:140,h:22,color:'#C4BC7E'},
+    // upper ring
+    {x:250,y:H-280,w:130,h:18,color:'#C4BC7E'},
+    {x:580,y:H-290,w:130,h:18,color:'#C4BC7E'},
+    // obsidian pillar top
+    {x:420,y:H-380,w:100,h:14,color:'#1A1A2E'}
   ],deathY:H+100,
   bgElements:[{type:'stars'},{type:'dragon',x:480,y:80},{type:'endCrystal',x:380,y:H-270},{type:'endCrystal',x:610,y:H-270}]},
 
   {name:'Jungle',bg:'#2D5A1E',platforms:[
-    // full ground
+    // uneven jungle floor
     {x:0,y:H-40,w:W,h:40,color:'#3B7A1A'},
-    // lower leaf platforms
-    {x:60,y:H-140,w:160,h:20,color:'#1E7A0E'},
-    {x:380,y:H-130,w:200,h:20,color:'#1E7A0E'},
-    {x:720,y:H-150,w:160,h:20,color:'#1E7A0E'},
-    // mid canopy
-    {x:430,y:H-250,w:100,h:15,color:'#168A06'},
-    // top canopy
-    {x:410,y:H-340,w:60,h:12,color:'#168A06'}
+    // low vine platforms scattered
+    {x:30,y:H-120,w:130,h:18,color:'#1E7A0E'},
+    {x:250,y:H-150,w:110,h:18,color:'#1E7A0E'},
+    {x:600,y:H-130,w:120,h:18,color:'#1E7A0E'},
+    {x:810,y:H-110,w:120,h:18,color:'#1E7A0E'},
+    // mid canopy - wide branches
+    {x:130,y:H-240,w:180,h:16,color:'#168A06'},
+    {x:640,y:H-250,w:190,h:16,color:'#168A06'},
+    // top canopy - small leaves
+    {x:350,y:H-310,w:90,h:14,color:'#168A06'},
+    {x:520,y:H-330,w:80,h:14,color:'#168A06'},
+    // tippy top
+    {x:440,y:H-400,w:70,h:12,color:'#0E6A00'}
   ],deathY:H+100,
   bgElements:[{type:'jungle_bg'},{type:'vines'},{type:'parrot',x:200,y:120},{type:'parrot',x:700,y:90}]},
 
   {name:'Village',bg:'#87CEEB',platforms:[
-    // street level
+    // cobblestone street
     {x:0,y:H-40,w:W,h:40,color:'#C4A463'},
-    // house rooftops (platforms)
-    {x:60,y:H-140,w:160,h:20,color:'#8B4513'},
-    {x:380,y:H-130,w:200,h:20,color:'#8B4513'},
-    {x:720,y:H-150,w:160,h:20,color:'#8B4513'},
-    // bell tower
-    {x:430,y:H-250,w:100,h:15,color:'#999'},
-    // church roof
-    {x:410,y:H-340,w:60,h:12,color:'#8B4513'}
+    // left house rooftop (wide)
+    {x:30,y:H-150,w:200,h:24,color:'#8B4513'},
+    // right house rooftop (wide)
+    {x:730,y:H-140,w:200,h:24,color:'#8B4513'},
+    // market stalls in center
+    {x:330,y:H-110,w:130,h:18,color:'#D4A463'},
+    {x:500,y:H-120,w:130,h:18,color:'#D4A463'},
+    // church tower - two tiers
+    {x:380,y:H-230,w:200,h:20,color:'#999'},
+    {x:420,y:H-330,w:120,h:16,color:'#8B4513'},
+    // chimney perch
+    {x:80,y:H-280,w:70,h:14,color:'#722F37'},
+    {x:830,y:H-270,w:70,h:14,color:'#722F37'}
   ],deathY:H+100,
   bgElements:[{type:'village_bg'},{type:'villagers'}]}
 ];
