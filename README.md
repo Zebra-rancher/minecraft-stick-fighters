@@ -10,14 +10,14 @@ Or play on GitHub Pages: https://zebra-rancher.github.io/minecraft-stick-fighter
 
 ## Features
 
-- **10 playable characters** with unique movesets and Minecraft weapons
+- **19 playable characters** with unique movesets and Minecraft weapons
 - **3 Minecraft mob fighters** with square heads and unique proportions (Skeleton, Spider, Enderman)
 - **5 Minecraft-themed stages** (Plains, Nether Fortress, The End, Jungle, Village)
 - **Multiple game modes**: VS CPU, 1v1 Local, Story Mode, Training Camp, Training
-- **Training Camp** - 10 unique minigames that unlock bonus attacks for each character
+- **Training Camp** - 19 unique minigames that unlock bonus attacks for each character
 - **Final Smash system** - break the floating Smash Ball to unleash a devastating super move
 - **Item drops**: Golden Apples, Potions, TNT, Ender Pearls, and more
-- **Character unlocks** through Story Mode progression (5 unlockable fighters)
+- **Character unlocks** through Story Mode progression (14 unlockable fighters)
 - **Combo attacks** using directional inputs + attack button
 - **Enchanted weapons** with pixel-art rendering and shimmer effects
 - **Training stage** with walls so you can't fall off
@@ -52,6 +52,20 @@ Combine directions with attack for different moves (up+attack = uppercut, forwar
 | Purple | Purple | Elytra + Fists | Elytra Brawler - aerial glide with heavy punches (Unlockable) |
 | King Orange | Gold | Command Block | Command Block Overlord - /commands and golden energy (Unlockable) |
 
+### Animator vs. Animation Characters
+
+| Character | Color | Weapon | Style |
+|-----------|-------|--------|-------|
+| Ballista | Brown | Heavy Crossbow | Mercenary Marksman - heavy bolts, slow but devastating (Unlockable) |
+| Hazard | Green | Toxic Vials | Mercenary Chemist - poisons, acids, toxic clouds (Unlockable) |
+| Primal | Sienna | Bone Club | Mercenary Savage - bone club brawler, ferocious combos (Unlockable) |
+| Agent | Dark Blue | Tactical Pistol | Mercenary Operative - fast tactical fighter, pistol & gadgets (Unlockable) |
+| The Mouse | White | Cursor Arrow | Alan's Cursor - fast click attacks, drag throws (Unlockable) |
+| The Chosen One | Black | Fire Fists | Legendary fighter - fire powers, laser eyes (Unlockable) |
+| The Dark Lord | Dark Red | Virus Swords | Virus-corrupted warrior - dual virus swords (Unlockable) |
+| The Hacker | Matrix Green | Hack Tablet | Digital manipulator - glitch attacks, code injection (Unlockable) |
+| Bed Wars Player | Red | Iron Sword | Strategic fighter - bridge building, bed defense (Unlockable) |
+
 ### Minecraft Mobs
 
 | Character | Appearance | Weapon | Style |
@@ -76,6 +90,15 @@ Complete each character's unique minigame to unlock a powerful bonus attack!
 | Skeleton | Target Range | Aim and shoot at hay bale targets, 12/15 hits to pass | Piercing Arrow (10 dmg, long range) |
 | Spider | Web Weave | Connect dots in sequence to form a web pattern before time runs out | Venom Spit (8 dmg poison projectile) |
 | Enderman | Block Memory | Memory matching game - find all 6 pairs in under 20 flips | Ender Slam (14 dmg teleport + slam) |
+| Ballista | Siege Defense | Aim crossbow turret and shoot down incoming enemies | Siege Shot (16 dmg ranged bolt) |
+| Hazard | Chemical Mix | Mix chemicals to match 3 formulas | Toxic Cloud (6 dmg AoE poison) |
+| Primal | Bone Toss | Throw bones at targets with a power meter | Primal Roar (16 dmg shockwave) |
+| Agent | Stealth Ops | Sneak past guard vision cones to reach the exit | Smoke Bomb (12 dmg AoE) |
+| The Mouse | Click Speed | Click targets with cursor as fast as possible | Right Click Menu (14 dmg AoE) |
+| The Chosen One | Fire Control | Aim and shoot fire at targets | Laser Eyes (18 dmg beam) |
+| The Dark Lord | Virus Purge | Slash incoming virus blocks within your range | Virus Surge (15 dmg AoE poison) |
+| The Hacker | Code Breaker | Memorize and enter 4-digit binary codes | DDoS Attack (12 dmg multi-shot) |
+| Bed Wars Player | Bed Defense | Build walls to protect your bed from enemies | Fireball Rush (14 dmg explosive) |
 
 ## Final Smashes
 
@@ -93,6 +116,15 @@ Break the floating Smash Ball (3 hits) to charge your super move!
 | Skeleton | Arrow Storm | Cinematic - arrows rain across entire stage |
 | Spider | Web Prison | Cinematic - wraps opponent, spider swarm attacks |
 | Enderman | Block Storm | Cinematic - rips up blocks and hurls them at opponent |
+| Ballista | Siege Barrage | Cinematic - rapid-fire crossbow volley |
+| Hazard | Toxic Meltdown | Cinematic - massive acid explosion |
+| Primal | Primal Fury | Cinematic - savage bone club flurry |
+| Agent | Tactical Strike | Cinematic - coordinated tactical assault |
+| The Mouse | Ctrl+A Select All | Cinematic - selects and drags opponent |
+| The Chosen One | Full Power Unleashed | Transformation - 12 sec of 2.5x strength, 1.8x speed |
+| The Dark Lord | Virus Corruption | Cinematic - virus infection spread |
+| The Hacker | System Override | Cinematic - matrix-style reality hack |
+| Bed Wars Player | Bed Destruction | Cinematic - TNT bed explosion chain |
 
 ## Stages
 
