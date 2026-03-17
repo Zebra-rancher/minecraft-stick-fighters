@@ -1136,13 +1136,9 @@ class Fighter{
     const blink=f.invincible>0&&Math.floor(f.invincible/2)%2===0;if(blink)return;
     ctx.save();ctx.translate(f.x,f.y);
 
-    // Mob-specific body proportions
+    // Mob-specific body proportions (applied only for non-mob stick figures that need it)
     const isTall=f.id==='enderman';
     const isWide=f.id==='spider';
-    const isBony=f.id==='skeleton';
-    const scaleY=isTall?1.35:1;
-    const scaleX=isWide?1.3:1;
-    if(isTall||isWide)ctx.scale(scaleX,scaleY);
     const headY=-50,bodyTop=-42,bodyBot=-10,legLen=18,armLen=16;
 
     // elytra wings on back
@@ -1153,112 +1149,274 @@ class Fighter{
       ctx.beginPath();ctx.moveTo(0,-35);ctx.lineTo(20*wingSpread,-45);ctx.lineTo(15*wingSpread,-25);ctx.closePath();ctx.fill();
     }
 
-    // legs
-    const lAngle=Math.sin(f.walkCycle)*0.5;
-    ctx.strokeStyle=c;ctx.lineWidth=3;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(0,bodyBot);ctx.lineTo(-6+Math.sin(lAngle)*legLen,-10+legLen*0.8);ctx.lineTo(-8+Math.sin(lAngle)*legLen*1.2,bodyBot+legLen);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(0,bodyBot);ctx.lineTo(6+Math.sin(-lAngle)*legLen,-10+legLen*0.8);ctx.lineTo(8+Math.sin(-lAngle)*legLen*1.2,bodyBot+legLen);ctx.stroke();
-
-    // body
-    ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,bodyTop);ctx.lineTo(0,bodyBot);ctx.stroke();
-
-    // arms + weapon
     const atkAnim=f.state==='attack'?f.attackPhase:'';
     const armBaseY=-38;
+    const lAngle=Math.sin(f.walkCycle)*0.5;
+    const isBlocky=f.id==='bedwars';
+    const isMerc=f.id==='ballista'||f.id==='hazard'||f.id==='primal';
+    const isMob=f.id==='skeleton'||f.id==='spider'||f.id==='enderman';
 
-    if(atkAnim==='active'||atkAnim==='startup'){
-      const atk=f.currentAttack;
-      const progress=atkAnim==='startup'?0.5:1;
-      let weapAngle=f.facing*Math.PI*0.3*progress,weapX=f.facing*18*progress,weapY=armBaseY;
-
-      if(atk.name&&(atk.name.includes('Uppercut')||atk.name.includes('Upper')||atk.name.includes('Launch')||atk.name.includes('Sky')||atk.name.includes('Riptide')||atk.name.includes('Rising'))){
-        weapAngle=-Math.PI*0.6*progress;weapX=f.facing*10;weapY=armBaseY-10;
-      }else if(atk.name&&(atk.name.includes('Slam')||atk.name.includes('Drop')||atk.name.includes('Ground')||atk.name.includes('Down')||atk.name.includes('Meteor'))){
-        weapAngle=Math.PI*0.4*progress;weapX=f.facing*8;weapY=armBaseY+5;
+    if(isMob){
+      // === MINECRAFT MOB BODY (blocky, Minecraft-style) ===
+      const legSwing=Math.sin(f.walkCycle)*5;
+      if(f.id==='skeleton'){
+        // SKELETON: narrow bone body, visible ribs, bony limbs
+        // legs (thin bone)
+        ctx.fillStyle='#D4C8B0';
+        ctx.save();ctx.translate(-4,bodyBot);ctx.rotate(legSwing*0.03);ctx.fillRect(-2,0,4,legLen);ctx.restore();
+        ctx.save();ctx.translate(4,bodyBot);ctx.rotate(-legSwing*0.03);ctx.fillRect(-2,0,4,legLen);ctx.restore();
+        // torso (ribcage)
+        ctx.fillStyle='#C8BCA0';ctx.fillRect(-6,bodyTop,12,bodyBot-bodyTop);
+        // rib lines
+        ctx.strokeStyle='#A09080';ctx.lineWidth=1;
+        for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(-5,bodyTop+4+i*6);ctx.lineTo(5,bodyTop+4+i*6);ctx.stroke()}
+        // spine
+        ctx.strokeStyle='#A09080';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,bodyTop);ctx.lineTo(0,bodyBot);ctx.stroke();
+        // arms (thin bone)
+        if(atkAnim==='active'||atkAnim==='startup'){
+          const atk=f.currentAttack;const progress=atkAnim==='startup'?0.5:1;
+          let weapAngle=f.facing*Math.PI*0.3*progress,weapX=f.facing*18*progress,weapY=armBaseY;
+          if(atk.name&&(atk.name.includes('Upper')||atk.name.includes('Sky'))){weapAngle=-Math.PI*0.6*progress;weapX=f.facing*10;weapY=armBaseY-10}
+          else if(atk.name&&(atk.name.includes('Slam')||atk.name.includes('Down')||atk.name.includes('Ground'))){weapAngle=Math.PI*0.4*progress;weapX=f.facing*8;weapY=armBaseY+5}
+          ctx.fillStyle='#D4C8B0';
+          ctx.save();ctx.translate(f.facing*7,armBaseY);ctx.rotate(weapAngle*0.4);ctx.fillRect(0,-2,f.facing*12,4);ctx.restore();
+          const wType=atk.weaponDraw||f.def.weaponType;if(wType)drawWeapon(wType,weapX,weapY,weapAngle,f.facing);
+          ctx.fillRect(-f.facing*7-2,armBaseY-1,4,14);
+        }else if(f.state==='hitstun'){
+          ctx.fillStyle='#D4C8B0';ctx.fillRect(-10,armBaseY-1,4,12);ctx.fillRect(6,armBaseY-1,4,12);
+        }else{
+          const aSwing=Math.sin(f.walkCycle)*0.3;
+          ctx.fillStyle='#D4C8B0';
+          ctx.save();ctx.translate(-7,armBaseY);ctx.rotate(aSwing);ctx.fillRect(-2,0,4,14);ctx.restore();
+          ctx.save();ctx.translate(7,armBaseY);ctx.rotate(-aSwing);ctx.fillRect(-2,0,4,14);ctx.restore();
+          drawWeapon(f.def.weaponType,f.facing*14,armBaseY+12,0.3,f.facing);
+        }
+        // head (square skull)
+        ctx.fillStyle='#D4C8B0';ctx.fillRect(-10,headY-10,20,20);
+        // dark eye sockets
+        ctx.fillStyle='#000';ctx.fillRect(-6,headY-5,5,6);ctx.fillRect(1,headY-5,5,6);
+        // nose hole
+        ctx.fillRect(-1,headY+2,2,2);
+        // jaw
+        ctx.fillStyle='#C0B498';ctx.fillRect(-8,headY+6,16,4);
+        ctx.fillStyle='#000';ctx.fillRect(-5,headY+7,2,2);ctx.fillRect(3,headY+7,2,2);
+      }else if(f.id==='spider'){
+        // SPIDER: wide low body, 8 legs, no arms/weapon drawn normally
+        // abdomen (large rounded back section)
+        ctx.fillStyle='#333';
+        ctx.fillRect(-12,bodyTop-2,24,bodyBot-bodyTop+6);
+        // thorax detail
+        ctx.fillStyle='#444';ctx.fillRect(-10,bodyTop,20,8);
+        // 8 legs (4 per side, jointed)
+        ctx.strokeStyle='#555';ctx.lineWidth=3;ctx.lineCap='round';
+        const lWave=Math.sin(f.walkCycle)*0.35;
+        for(let i=0;i<4;i++){
+          const yOff=bodyTop+4+i*6;const spread=16+i*4;const joint=spread*0.5;
+          // left legs
+          ctx.beginPath();ctx.moveTo(-10,yOff);
+          ctx.lineTo(-10-joint-Math.sin(lWave+i)*3,yOff-4);
+          ctx.lineTo(-10-spread-Math.sin(lWave+i)*5,yOff+spread*0.4);ctx.stroke();
+          // right legs
+          ctx.beginPath();ctx.moveTo(10,yOff);
+          ctx.lineTo(10+joint+Math.sin(lWave+i)*3,yOff-4);
+          ctx.lineTo(10+spread+Math.sin(lWave+i)*5,yOff+spread*0.4);ctx.stroke();
+        }
+        // fangs
+        if(atkAnim==='active'){
+          ctx.strokeStyle='#CC0000';ctx.lineWidth=2;
+          ctx.beginPath();ctx.moveTo(-3,headY+8);ctx.lineTo(-5,headY+16);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(3,headY+8);ctx.lineTo(5,headY+16);ctx.stroke();
+          const atk=f.currentAttack;const wType=atk.weaponDraw||f.def.weaponType;
+          if(wType)drawWeapon(wType,f.facing*16,armBaseY,f.facing*0.4,f.facing);
+        }else if(atkAnim==='startup'){
+          const atk=f.currentAttack;const wType=atk.weaponDraw||f.def.weaponType;
+          if(wType)drawWeapon(wType,f.facing*12,armBaseY,f.facing*0.2,f.facing);
+        }else{
+          drawWeapon(f.def.weaponType,f.facing*14,armBaseY+6,0.2,f.facing);
+        }
+        // head (wide square)
+        ctx.fillStyle='#333';ctx.fillRect(-14,headY-10,28,20);
+        // 8 red eyes (2 rows)
+        ctx.fillStyle='#CC0000';
+        ctx.fillRect(-8,headY-6,3,3);ctx.fillRect(-3,headY-6,3,3);ctx.fillRect(1,headY-6,3,3);ctx.fillRect(6,headY-6,3,3);
+        ctx.fillRect(-6,headY-1,2,2);ctx.fillRect(-2,headY-1,2,2);ctx.fillRect(2,headY-1,2,2);ctx.fillRect(6,headY-1,2,2);
+        // wall cling indicator
+        if(f.wallClinging){
+          ctx.strokeStyle='rgba(200,200,200,0.5)';ctx.lineWidth=1;ctx.setLineDash([2,2]);
+          for(let i=0;i<3;i++){const wx=f.x<W/2?-16:16;ctx.beginPath();ctx.moveTo(wx,-42+i*12);ctx.lineTo(wx*1.3,-45+i*12);ctx.stroke()}
+          ctx.setLineDash([]);
+        }
+      }else if(f.id==='enderman'){
+        // ENDERMAN: tall, very thin blocky body, long limbs
+        // legs (very long and thin)
+        ctx.fillStyle='#111';
+        ctx.save();ctx.translate(-4,bodyBot);ctx.rotate(legSwing*0.025);ctx.fillRect(-2,0,4,legLen+6);ctx.restore();
+        ctx.save();ctx.translate(4,bodyBot);ctx.rotate(-legSwing*0.025);ctx.fillRect(-2,0,4,legLen+6);ctx.restore();
+        // torso (narrow rectangular)
+        ctx.fillStyle='#1A1A1A';ctx.fillRect(-5,bodyTop,10,bodyBot-bodyTop);
+        // arms (very long, thin)
+        if(atkAnim==='active'||atkAnim==='startup'){
+          const atk=f.currentAttack;const progress=atkAnim==='startup'?0.5:1;
+          let weapAngle=f.facing*Math.PI*0.3*progress,weapX=f.facing*20*progress,weapY=armBaseY;
+          if(atk.name&&(atk.name.includes('Upper')||atk.name.includes('Sky')||atk.name.includes('Slam'))){weapAngle=-Math.PI*0.5*progress;weapX=f.facing*12;weapY=armBaseY-12}
+          ctx.fillStyle='#111';
+          ctx.save();ctx.translate(f.facing*6,armBaseY);ctx.rotate(weapAngle*0.4);ctx.fillRect(0,-2,f.facing*16,4);ctx.restore();
+          const wType=atk.weaponDraw||f.def.weaponType;if(wType)drawWeapon(wType,weapX,weapY,weapAngle,f.facing);
+          ctx.fillRect(-f.facing*6-2,armBaseY-1,4,18);
+        }else if(f.state==='hitstun'){
+          ctx.fillStyle='#111';ctx.fillRect(-10,armBaseY-1,4,16);ctx.fillRect(6,armBaseY-1,4,16);
+        }else{
+          const aSwing=Math.sin(f.walkCycle)*0.25;
+          ctx.fillStyle='#111';
+          ctx.save();ctx.translate(-6,armBaseY);ctx.rotate(aSwing);ctx.fillRect(-2,0,4,18);ctx.restore();
+          ctx.save();ctx.translate(6,armBaseY);ctx.rotate(-aSwing);ctx.fillRect(-2,0,4,18);ctx.restore();
+          drawWeapon(f.def.weaponType,f.facing*14,armBaseY+16,0.3,f.facing);
+        }
+        // head (square, slightly tall)
+        ctx.fillStyle='#111';ctx.fillRect(-9,headY-10,18,18);
+        // glowing purple eyes
+        const t=Date.now()/250;
+        ctx.fillStyle=`rgba(255,100,255,${0.7+Math.sin(t*3)*0.3})`;
+        ctx.fillRect(-5,headY-4,4,3);ctx.fillRect(2,headY-4,4,3);
+        // ender particles
+        for(let i=0;i<8;i++){
+          ctx.fillStyle=`rgba(155,89,182,${0.2+Math.sin(t+i*1.5)*0.2})`;
+          ctx.fillRect(Math.sin(t+i*2)*24-1,Math.cos(t+i*1.7)*35-35,3,3);
+        }
+        // open mouth when attacking
+        if(f.state==='attack'){ctx.fillStyle='#9B59B6';ctx.fillRect(-3,headY+3,6,4)}
       }
-
-      // attack arm
-      ctx.strokeStyle=c;ctx.lineWidth=3;
-      ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(weapX,weapY);ctx.stroke();
-      // draw weapon
-      const wType=atk.weaponDraw||f.def.weaponType;
-      if(wType)drawWeapon(wType,weapX,weapY,weapAngle,f.facing);
-      // other arm
-      ctx.strokeStyle=c;ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(-f.facing*12,armBaseY+8);ctx.stroke();
-    }else if(f.state==='hitstun'){
-      ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(-f.vx*2,armBaseY-8);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(-f.vx*2+5,armBaseY+5);ctx.stroke();
-    }else{
-      const aSwing=Math.sin(f.walkCycle)*0.3;
-      ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(f.facing*12+Math.sin(aSwing)*5,armBaseY+10);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(-f.facing*5-Math.sin(aSwing)*5,armBaseY+12);ctx.stroke();
-      drawWeapon(f.def.weaponType,f.facing*14,armBaseY+12,0.3,f.facing);
-    }
-
-    // head - square for mobs, round for stick figures
-    ctx.fillStyle=c;
-    if(f.id==='skeleton'||f.id==='enderman'||f.id==='spider'){
-      // Minecraft-style square head
-      const hs=f.id==='enderman'?9:f.id==='spider'?12:10;
-      ctx.fillRect(-hs,headY-hs,hs*2,hs*2);
-    }else{
-      ctx.beginPath();ctx.arc(0,headY,10,0,Math.PI*2);ctx.fill();
-    }
-    // eyes (overridden by mob-specific draws below for mobs)
-    if(f.id!=='skeleton'&&f.id!=='enderman'&&f.id!=='spider'){
+    }else if(isBlocky){
+      // === MINECRAFT PLAYER BODY (Steve-like blocky) ===
+      const legSwing=Math.sin(f.walkCycle)*6;
+      // legs (rectangular, animated)
+      ctx.fillStyle='#2244AA';// blue pants
+      ctx.fillRect(-6,bodyBot,5,legLen);ctx.fillRect(1,bodyBot,5,legLen);
+      // animate leg swing
+      ctx.save();ctx.translate(-3,bodyBot);ctx.rotate(legSwing*0.04);ctx.fillRect(-3,0,5,legLen);ctx.restore();
+      ctx.save();ctx.translate(3,bodyBot);ctx.rotate(-legSwing*0.04);ctx.fillRect(-2,0,5,legLen);ctx.restore();
+      // torso (rectangular)
+      ctx.fillStyle='#44AAAA';// teal shirt
+      ctx.fillRect(-7,bodyTop,14,bodyBot-bodyTop);
+      // shirt detail
+      ctx.fillStyle='#339999';ctx.fillRect(-5,bodyTop+4,10,4);
+      // arms (rectangular, animated)
+      const armSwing=Math.sin(f.walkCycle)*0.4;
+      if(atkAnim==='active'||atkAnim==='startup'){
+        const atk=f.currentAttack;const progress=atkAnim==='startup'?0.5:1;
+        let weapAngle=f.facing*Math.PI*0.3*progress,weapX=f.facing*18*progress,weapY=armBaseY;
+        if(atk.name&&(atk.name.includes('Uppercut')||atk.name.includes('Upper')||atk.name.includes('Launch')||atk.name.includes('Sky'))){weapAngle=-Math.PI*0.6*progress;weapX=f.facing*10;weapY=armBaseY-10}
+        else if(atk.name&&(atk.name.includes('Slam')||atk.name.includes('Drop')||atk.name.includes('Ground')||atk.name.includes('Down'))){weapAngle=Math.PI*0.4*progress;weapX=f.facing*8;weapY=armBaseY+5}
+        // attack arm (blocky)
+        ctx.fillStyle='#44AAAA';
+        ctx.save();ctx.translate(f.facing*8,armBaseY);ctx.rotate(weapAngle*0.5);ctx.fillRect(0,-3,f.facing*14,6);ctx.restore();
+        const wType=atk.weaponDraw||f.def.weaponType;if(wType)drawWeapon(wType,weapX,weapY,weapAngle,f.facing);
+        // other arm
+        ctx.fillRect(-f.facing*8-3,armBaseY-2,6,16);
+      }else if(f.state==='hitstun'){
+        ctx.fillStyle='#44AAAA';ctx.fillRect(-10,armBaseY-2,6,14);ctx.fillRect(4,armBaseY-2,6,14);
+      }else{
+        ctx.fillStyle='#44AAAA';
+        ctx.save();ctx.translate(-8,armBaseY);ctx.rotate(armSwing);ctx.fillRect(-3,0,6,14);ctx.restore();
+        ctx.save();ctx.translate(8,armBaseY);ctx.rotate(-armSwing);ctx.fillRect(-3,0,6,14);ctx.restore();
+        drawWeapon(f.def.weaponType,f.facing*14,armBaseY+12,0.3,f.facing);
+      }
+      // head (square, Minecraft player)
+      ctx.fillStyle='#C69C6D';// skin color
+      ctx.fillRect(-8,headY-8,16,16);
+      // hair
+      ctx.fillStyle='#4A2F1B';
+      ctx.fillRect(-8,headY-8,16,5);ctx.fillRect(-8,headY-8,3,16);ctx.fillRect(5,headY-8,3,16);
+      // eyes
+      ctx.fillStyle='#fff';ctx.fillRect(f.facing*2-1,headY-2,3,3);ctx.fillRect(f.facing*5,headY-2,3,3);
+      ctx.fillStyle='#46399C';ctx.fillRect(f.facing*2,headY-1,2,2);ctx.fillRect(f.facing*5+1,headY-1,2,2);
+      // mouth
+      ctx.fillStyle='#8B6350';ctx.fillRect(-2,headY+4,4,2);
+    }else if(isMerc){
+      // === MERCENARY BODY (thicker, armored) ===
+      const legSwing=Math.sin(f.walkCycle)*5;
+      // legs (thick)
+      ctx.fillStyle=f.id==='primal'?'#6B3A1E':f.id==='hazard'?'#2A5A12':'#3A2A1A';
+      ctx.save();ctx.translate(-4,bodyBot);ctx.rotate(legSwing*0.03);ctx.fillRect(-3,0,6,legLen);ctx.restore();
+      ctx.save();ctx.translate(4,bodyBot);ctx.rotate(-legSwing*0.03);ctx.fillRect(-3,0,6,legLen);ctx.restore();
+      // boots
+      ctx.fillStyle='#222';
+      ctx.fillRect(-8,bodyBot+legLen-4,7,5);ctx.fillRect(1,bodyBot+legLen-4,7,5);
+      // torso (wide, armored)
+      ctx.fillStyle=c;
+      ctx.fillRect(-9,bodyTop,18,bodyBot-bodyTop);
+      // armor plate
+      const armorColor=f.id==='ballista'?'#5A4A3A':f.id==='hazard'?'#1A3A0A':'#6B4A2A';
+      ctx.fillStyle=armorColor;
+      ctx.fillRect(-8,bodyTop+2,16,10);
+      // shoulder pads
+      ctx.fillStyle=armorColor;
+      ctx.fillRect(-13,bodyTop-1,6,6);ctx.fillRect(7,bodyTop-1,6,6);
+      // belt
+      ctx.fillStyle='#444';ctx.fillRect(-8,bodyBot-3,16,3);
+      ctx.fillStyle='#FFD700';ctx.fillRect(-2,bodyBot-3,4,3);// buckle
+      // arms
+      if(atkAnim==='active'||atkAnim==='startup'){
+        const atk=f.currentAttack;const progress=atkAnim==='startup'?0.5:1;
+        let weapAngle=f.facing*Math.PI*0.3*progress,weapX=f.facing*18*progress,weapY=armBaseY;
+        if(atk.name&&(atk.name.includes('Uppercut')||atk.name.includes('Upper')||atk.name.includes('Launch')||atk.name.includes('Sky'))){weapAngle=-Math.PI*0.6*progress;weapX=f.facing*10;weapY=armBaseY-10}
+        else if(atk.name&&(atk.name.includes('Slam')||atk.name.includes('Drop')||atk.name.includes('Ground')||atk.name.includes('Down'))){weapAngle=Math.PI*0.4*progress;weapX=f.facing*8;weapY=armBaseY+5}
+        ctx.fillStyle=c;
+        ctx.save();ctx.translate(f.facing*10,armBaseY+2);ctx.rotate(weapAngle*0.4);ctx.fillRect(0,-3,f.facing*12,7);ctx.restore();
+        const wType=atk.weaponDraw||f.def.weaponType;if(wType)drawWeapon(wType,weapX,weapY,weapAngle,f.facing);
+        ctx.fillRect(-f.facing*10-3,armBaseY,7,16);
+      }else if(f.state==='hitstun'){
+        ctx.fillStyle=c;ctx.fillRect(-12,armBaseY,7,14);ctx.fillRect(5,armBaseY,7,14);
+      }else{
+        const aSwing=Math.sin(f.walkCycle)*0.3;
+        ctx.fillStyle=c;
+        ctx.save();ctx.translate(-10,armBaseY);ctx.rotate(aSwing);ctx.fillRect(-3,0,7,14);ctx.restore();
+        ctx.save();ctx.translate(10,armBaseY);ctx.rotate(-aSwing);ctx.fillRect(-4,0,7,14);ctx.restore();
+        drawWeapon(f.def.weaponType,f.facing*16,armBaseY+14,0.3,f.facing);
+      }
+      // head (round but with helmet/gear)
+      ctx.fillStyle=c;ctx.beginPath();ctx.arc(0,headY,10,0,Math.PI*2);ctx.fill();
+      // eyes
       ctx.fillStyle='#fff';ctx.fillRect(f.facing*3-2,headY-3,3,3);ctx.fillRect(f.facing*6-1,headY-3,3,3);
-    }
-
-    // Spider - wide body, 8 red eyes, extra legs
-    if(f.id==='spider'){
-      // 8 red eyes (2 rows of 4)
-      ctx.fillStyle='#CC0000';
-      ctx.fillRect(-5,headY-5,2,2);ctx.fillRect(-1,headY-5,2,2);ctx.fillRect(3,headY-5,2,2);ctx.fillRect(-3,headY-2,2,2);
-      ctx.fillRect(1,headY-2,2,2);ctx.fillRect(-5,headY-1,2,2);ctx.fillRect(3,headY-1,2,2);ctx.fillRect(-1,headY+1,2,2);
-      // extra spider legs (4 on each side)
-      ctx.strokeStyle='#444';ctx.lineWidth=2;ctx.lineCap='round';
-      const lWave=Math.sin(f.walkCycle)*0.3;
-      for(let i=0;i<4;i++){
-        const yOff=-38+i*8;const spread=12+i*3;
-        ctx.beginPath();ctx.moveTo(0,yOff);ctx.lineTo(-spread-Math.sin(lWave+i)*4,yOff+spread*0.6);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(0,yOff);ctx.lineTo(spread+Math.sin(lWave+i)*4,yOff+spread*0.6);ctx.stroke();
+      ctx.fillStyle='#111';ctx.fillRect(f.facing*3-1,headY-2,2,2);ctx.fillRect(f.facing*6,headY-2,2,2);
+    }else{
+      // === DEFAULT STICK FIGURE BODY ===
+      // legs
+      ctx.strokeStyle=c;ctx.lineWidth=3;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(0,bodyBot);ctx.lineTo(-6+Math.sin(lAngle)*legLen,-10+legLen*0.8);ctx.lineTo(-8+Math.sin(lAngle)*legLen*1.2,bodyBot+legLen);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(0,bodyBot);ctx.lineTo(6+Math.sin(-lAngle)*legLen,-10+legLen*0.8);ctx.lineTo(8+Math.sin(-lAngle)*legLen*1.2,bodyBot+legLen);ctx.stroke();
+      // body
+      ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,bodyTop);ctx.lineTo(0,bodyBot);ctx.stroke();
+      // arms + weapon
+      if(atkAnim==='active'||atkAnim==='startup'){
+        const atk=f.currentAttack;
+        const progress=atkAnim==='startup'?0.5:1;
+        let weapAngle=f.facing*Math.PI*0.3*progress,weapX=f.facing*18*progress,weapY=armBaseY;
+        if(atk.name&&(atk.name.includes('Uppercut')||atk.name.includes('Upper')||atk.name.includes('Launch')||atk.name.includes('Sky')||atk.name.includes('Riptide')||atk.name.includes('Rising'))){
+          weapAngle=-Math.PI*0.6*progress;weapX=f.facing*10;weapY=armBaseY-10;
+        }else if(atk.name&&(atk.name.includes('Slam')||atk.name.includes('Drop')||atk.name.includes('Ground')||atk.name.includes('Down')||atk.name.includes('Meteor'))){
+          weapAngle=Math.PI*0.4*progress;weapX=f.facing*8;weapY=armBaseY+5;
+        }
+        ctx.strokeStyle=c;ctx.lineWidth=3;
+        ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(weapX,weapY);ctx.stroke();
+        const wType=atk.weaponDraw||f.def.weaponType;
+        if(wType)drawWeapon(wType,weapX,weapY,weapAngle,f.facing);
+        ctx.strokeStyle=c;ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(-f.facing*12,armBaseY+8);ctx.stroke();
+      }else if(f.state==='hitstun'){
+        ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(-f.vx*2,armBaseY-8);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(-f.vx*2+5,armBaseY+5);ctx.stroke();
+      }else{
+        const aSwing=Math.sin(f.walkCycle)*0.3;
+        ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(f.facing*12+Math.sin(aSwing)*5,armBaseY+10);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(0,armBaseY);ctx.lineTo(-f.facing*5-Math.sin(aSwing)*5,armBaseY+12);ctx.stroke();
+        drawWeapon(f.def.weaponType,f.facing*14,armBaseY+12,0.3,f.facing);
       }
-      // wall cling indicator
-      if(f.wallClinging){
-        ctx.strokeStyle='rgba(200,200,200,0.5)';ctx.lineWidth=1;ctx.setLineDash([2,2]);
-        for(let i=0;i<3;i++){const wx=f.x<W/2?-14:14;ctx.beginPath();ctx.moveTo(wx,-42+i*12);ctx.lineTo(wx*1.4,-45+i*12);ctx.stroke()}
-        ctx.setLineDash([]);
-      }
-    }
 
-    // Skeleton - square skull, ribs, bone-colored body
-    if(f.id==='skeleton'){
-      // ribs visible on body
-      ctx.strokeStyle='#D4C8B0';ctx.lineWidth=1;
-      for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(-5,-38+i*6);ctx.lineTo(5,-38+i*6);ctx.stroke()}
-      // dark eye sockets on square head
-      ctx.fillStyle='#000';
-      ctx.fillRect(-5,headY-4,4,5);ctx.fillRect(1,headY-4,4,5);
-      // nose hole
-      ctx.fillRect(-1,headY+2,2,2);
-      // jaw
-      ctx.fillStyle='#D4C8B0';ctx.fillRect(-6,headY+5,12,3);
-      ctx.fillStyle='#000';ctx.fillRect(-4,headY+6,2,2);ctx.fillRect(2,headY+6,2,2);
-    }
-
-    // Enderman - tall, purple ender particles, pink eyes
-    if(f.id==='enderman'){
-      const t=Date.now()/250;
-      // ender particles floating around
-      for(let i=0;i<8;i++){
-        ctx.fillStyle=`rgba(155,89,182,${0.2+Math.sin(t+i*1.5)*0.2})`;
-        ctx.fillRect(Math.sin(t+i*2)*22-1,Math.cos(t+i*1.7)*35-35,3,3);
-      }
-      // glowing pink/purple eyes
-      ctx.fillStyle=`rgba(255,100,255,${0.7+Math.sin(t*3)*0.3})`;
-      ctx.fillRect(-4,headY-3,3,2);ctx.fillRect(2,headY-3,3,2);
-      // open mouth when attacking
-      if(f.state==='attack'){ctx.fillStyle='#9B59B6';ctx.fillRect(-3,headY+3,6,4)}
+      // head (round for stick figures)
+      ctx.fillStyle=c;
+      ctx.beginPath();ctx.arc(0,headY,10,0,Math.PI*2);ctx.fill();
+      // eyes
+      ctx.fillStyle='#fff';ctx.fillRect(f.facing*3-2,headY-3,3,3);ctx.fillRect(f.facing*6-1,headY-3,3,3);
     }
 
     // King Orange crown
@@ -1331,12 +1489,12 @@ class Fighter{
       ctx.fillRect(-11,headY-11+Math.sin(t)*8,22,2);
     }
 
-    // Bed Wars Player - wool helmet
+    // Bed Wars Player - iron helmet over Steve head
     if(f.id==='bedwars'){
-      // red wool helmet
-      ctx.fillStyle='#CC3333';
-      ctx.fillRect(-11,headY-12,22,8);
-      ctx.fillRect(-9,headY-14,18,4);
+      ctx.fillStyle='#AAA';
+      ctx.fillRect(-9,headY-10,18,5);// helmet band
+      ctx.fillRect(-7,headY-12,14,4);// helmet top
+      ctx.fillStyle='#888';ctx.fillRect(-3,headY-2,2,4);// nose guard
     }
 
     // Mercenary indicators
