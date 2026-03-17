@@ -20,7 +20,7 @@ const W=960,H=540;
 canvas.width=W;canvas.height=H;
 
 // ===== SAVE DATA =====
-let saveData={unlocked:['second_coming','red','blue','green','spider'],storyProgress:0,wins:0,bonusUnlocked:[]};
+let saveData={unlocked:['second_coming','red','blue','green','spider','the_mouse','chosen_one','dark_lord','agent','bedwars'],storyProgress:0,wins:0,bonusUnlocked:[]};
 try{const s=localStorage.getItem('mcfighters2');if(s)saveData=JSON.parse(s)}catch(e){}
 function save(){try{localStorage.setItem('mcfighters2',JSON.stringify(saveData))}catch(e){}}
 
@@ -573,7 +573,7 @@ const CHAR_DEFS={
     passive:'rage' // 1.3x damage below 30% HP
   },
   agent:{name:'Agent',color:'#2C3E50',weaponType:'agent_pistol',speed:5.0,jumpForce:12,weight:0.85,
-    desc:'Mercenary Operative - fast tactical fighter, pistol & gadgets',locked:true,
+    desc:'Mercenary Operative - fast tactical fighter, pistol & gadgets',
     bonusAttack:{dmg:12,kb:5,range:200,startup:5,active:4,recover:10,name:'Smoke Bomb',aoe:true,weaponDraw:null},
     attacks:{
       neutral:{dmg:6,kb:2,range:200,startup:3,active:3,recover:8,name:'Quick Shot',projectile:true,projSpeed:14,projColor:'#FFD700',weaponDraw:'agent_pistol'},
@@ -588,7 +588,7 @@ const CHAR_DEFS={
     }
   },
   the_mouse:{name:'The Mouse',color:'#FFFFFF',weaponType:'cursor_arrow',speed:5.5,jumpForce:14,weight:0.7,
-    desc:'Alan\'s Cursor - fast click attacks, drag throws, select traps',locked:true,
+    desc:'Alan\'s Cursor - fast click attacks, drag throws, select traps',
     bonusAttack:{dmg:14,kb:7,range:70,startup:5,active:5,recover:10,name:'Right Click Menu',aoe:true,weaponDraw:'cursor_arrow'},
     attacks:{
       neutral:{dmg:6,kb:2,range:40,startup:2,active:3,recover:5,name:'Click',combo:3,weaponDraw:'cursor_arrow'},
@@ -603,7 +603,7 @@ const CHAR_DEFS={
     }
   },
   chosen_one:{name:'The Chosen One',color:'#111111',weaponType:'fire_fists',speed:4.8,jumpForce:13,weight:1.0,
-    desc:'Legendary stick figure - fire powers, laser eyes, immense strength',locked:true,
+    desc:'Legendary stick figure - fire powers, laser eyes, immense strength',
     bonusAttack:{dmg:18,kb:8,range:250,startup:6,active:5,recover:14,name:'Laser Eyes',projectile:true,projSpeed:18,projColor:'#FF4400',weaponDraw:null},
     attacks:{
       neutral:{dmg:10,kb:4,range:45,startup:3,active:4,recover:7,name:'Fire Punch',weaponDraw:'fire_fists'},
@@ -619,7 +619,7 @@ const CHAR_DEFS={
     passive:'fireAura' // burns nearby opponents for 1 dmg/sec
   },
   dark_lord:{name:'The Dark Lord',color:'#660000',weaponType:'virus_sword',speed:4.3,jumpForce:12,weight:1.1,
-    desc:'Virus-corrupted warrior - dual virus swords, corrupting attacks',locked:true,
+    desc:'Virus-corrupted warrior - dual virus swords, corrupting attacks',
     bonusAttack:{dmg:15,kb:7,range:70,startup:6,active:5,recover:12,name:'Virus Surge',aoe:true,poison:true,weaponDraw:'virus_sword'},
     attacks:{
       neutral:{dmg:10,kb:3,range:48,startup:3,active:5,recover:8,name:'Virus Slash',weaponDraw:'virus_sword'},
@@ -649,7 +649,7 @@ const CHAR_DEFS={
     }
   },
   bedwars:{name:'Bed Wars Player',color:'#CC3333',weaponType:'bed_sword',speed:4.5,jumpForce:12,weight:1.0,
-    desc:'Strategic fighter - iron sword, bridge building, bed defense',locked:true,
+    desc:'Strategic fighter - iron sword, bridge building, bed defense',
     bonusAttack:{dmg:14,kb:6,range:160,startup:6,active:4,recover:12,name:'Fireball Rush',projectile:true,projSpeed:10,projColor:'#FF6600',explosive:true,weaponDraw:null},
     attacks:{
       neutral:{dmg:8,kb:3,range:44,startup:3,active:4,recover:7,name:'Sword Slash',weaponDraw:'bed_sword'},
