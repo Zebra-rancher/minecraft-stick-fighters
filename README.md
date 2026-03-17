@@ -139,17 +139,30 @@ Break the floating Smash Ball (3 hits) to charge your super move!
 
 ## Story Mode
 
-Fight through 10 battles to unlock all characters:
+Fight through 19 battles to unlock all characters:
+
+**Arc 1 - Minecraft Fighters**
 1. vs Red (Plains)
 2. vs Blue (Jungle)
 3. vs Green (Village)
-4. vs Yellow (Nether) - **Unlocks Yellow**
-5. vs Purple (The End) - **Unlocks Purple**
-6. vs King Orange (Nether)
-7. vs King Orange final (The End) - **Unlocks King Orange**
-8. vs Skeleton (Plains) - **Unlocks Skeleton**
-9. vs Spider (Jungle) - **Unlocks Spider**
-10. vs Enderman (The End) - **Unlocks Enderman**
+4. vs Spider (Plains)
+5. vs Yellow (Nether) - **Unlocks Yellow**
+6. vs Skeleton (Jungle) - **Unlocks Skeleton**
+7. vs Purple (The End) - **Unlocks Purple**
+8. vs Enderman (Village) - **Unlocks Enderman**
+9. vs King Orange (Nether) - **Unlocks King Orange**
+10. vs King Orange Final (The End) - BOSS FIGHT!
+
+**Arc 2 - Animator vs. Animation**
+11. vs Ballista (Plains) - **Unlocks Ballista**
+12. vs Hazard (Nether) - **Unlocks Hazard**
+13. vs Primal (Jungle) - **Unlocks Primal**
+14. vs Agent (The End) - **Unlocks Agent**
+15. vs The Mouse (Plains) - **Unlocks The Mouse**
+16. vs The Chosen One (The End) - LEGENDARY FIGHT! **Unlocks The Chosen One**
+17. vs The Dark Lord (Nether) - DARK BOSS! **Unlocks The Dark Lord**
+18. vs The Hacker (The End) - **Unlocks The Hacker**
+19. vs Bed Wars Player (Jungle) - FINAL CHALLENGE! **Unlocks Bed Wars Player**
 
 ## Win Conditions
 
