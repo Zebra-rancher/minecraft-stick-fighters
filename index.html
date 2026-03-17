@@ -192,6 +192,134 @@ function updateSmoothHP(){
   }
 }
 
+// Elemental attack effects (visual trails during active attacks)
+function drawElementalEffect(f){
+  if(f.state!=='attack'||!f.currentAttack)return;
+  const atk=f.currentAttack;const phase=f.attackPhase;
+  if(phase!=='active'&&phase!=='startup')return;
+  const t=Date.now()/100;
+  const ax=f.x+f.facing*15,ay=f.y-30;
+  // Fire effects (Chosen One, fire attacks)
+  if(f.id==='chosen_one'||(atk.projColor&&atk.projColor.includes('FF66'))){
+    ctx.shadowColor='#FF4400';ctx.shadowBlur=15;
+    for(let i=0;i<4;i++){
+      ctx.fillStyle=`rgba(255,${100+i*30},0,${0.4+Math.sin(t+i)*0.2})`;
+      ctx.fillRect(ax+Math.sin(t*2+i)*12-2,ay-i*8+Math.sin(t+i)*4,4+Math.random()*3,6);
+    }
+    ctx.shadowBlur=0;
+  }
+  // Ice/water effects (trident attacks)
+  if(atk.weaponDraw==='trident'||atk.riptide){
+    for(let i=0;i<3;i++){
+      ctx.fillStyle=`rgba(93,232,224,${0.3+Math.sin(t+i)*0.2})`;
+      ctx.fillRect(ax+Math.cos(t+i)*16-1,ay+Math.sin(t+i)*10-1,3,3);
+    }
+  }
+  // Lightning effects
+  if(atk.lightning){
+    ctx.strokeStyle=`rgba(255,228,77,${0.5+Math.sin(t*4)*0.3})`;ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(ax,ay-20);
+    for(let i=0;i<4;i++)ctx.lineTo(ax+Math.random()*20-10,ay-20+i*12);
+    ctx.stroke();
+  }
+  // Explosive effects (TNT, bombs)
+  if(atk.explosive||atk.endCrystal||atk.chainTNT){
+    ctx.fillStyle=`rgba(255,68,68,${0.2+Math.sin(t*3)*0.15})`;
+    ctx.beginPath();ctx.arc(ax,ay,20+Math.sin(t*2)*5,0,Math.PI*2);ctx.fill();
+  }
+  // Poison/toxic (Hazard, Blue potions)
+  if(atk.poison||f.id==='hazard'){
+    for(let i=0;i<3;i++){
+      ctx.fillStyle=`rgba(68,204,34,${0.3+Math.sin(t+i*2)*0.2})`;
+      ctx.beginPath();ctx.arc(ax+Math.sin(t+i)*14,ay+Math.cos(t+i)*10,3+Math.sin(t*2+i),0,Math.PI*2);ctx.fill();
+    }
+  }
+  // Virus/corruption (Dark Lord)
+  if(f.id==='dark_lord'){
+    for(let i=0;i<3;i++){
+      ctx.fillStyle=`rgba(200,0,0,${0.3+Math.sin(t+i)*0.2})`;
+      ctx.fillRect(ax+Math.sin(t*1.5+i)*16-2,ay+Math.cos(t*1.5+i)*12-2,4+Math.random()*2,4+Math.random()*2);
+    }
+    // glitch lines
+    if(Math.random()<0.3){ctx.fillStyle='rgba(255,0,0,0.2)';ctx.fillRect(ax-20,ay+Math.random()*30-15,40,2)}
+  }
+  // Matrix/hacker effect
+  if(f.id==='hacker'){
+    ctx.fillStyle='rgba(0,255,0,0.3)';ctx.font='8px monospace';ctx.textAlign='center';
+    for(let i=0;i<3;i++){
+      ctx.fillText(String.fromCharCode(48+Math.floor(Math.random()*10)),ax+Math.random()*30-15,ay+Math.random()*30-15);
+    }
+  }
+  // Cursor effects (The Mouse)
+  if(f.id==='the_mouse'&&phase==='active'){
+    ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    ctx.strokeRect(ax-15,ay-15,30,30);ctx.setLineDash([]);
+  }
+}
+
+// Combo counter display
+function drawComboCounter(){
+  if(!fighters)return;
+  fighters.forEach((f,i)=>{
+    if(f.combo>=2&&f.comboTimer>0){
+      const cx=f.x,cy=f.y-70;
+      const scale=1+Math.min(f.combo*0.1,0.5);const alpha=f.comboTimer/30;
+      ctx.globalAlpha=alpha;
+      ctx.font=`bold ${Math.floor(18*scale)}px monospace`;ctx.textAlign='center';
+      // shadow
+      ctx.fillStyle='#000';ctx.fillText(`${f.combo} HIT${f.combo>1?'S':''}!`,cx+1,cy+1);
+      // color based on combo count
+      const comboColor=f.combo>=5?'#FF4444':f.combo>=3?'#FFD700':'#FFF';
+      ctx.fillStyle=comboColor;
+      ctx.fillText(`${f.combo} HIT${f.combo>1?'S':''}!`,cx,cy);
+      // glow for high combos
+      if(f.combo>=4){ctx.shadowColor=comboColor;ctx.shadowBlur=8;ctx.fillText(`${f.combo} HITS!`,cx,cy);ctx.shadowBlur=0}
+      ctx.globalAlpha=1;
+    }
+  });
+}
+
+// Dash attack system
+let dashState=[{dir:0,timer:0,dashing:false},{dir:0,timer:0,dashing:false}];
+function handleDash(playerIdx,left,right){
+  const ds=dashState[playerIdx];
+  const dir=right?1:(left?-1:0);
+  if(dir!==0&&dir===ds.dir&&ds.timer>0&&!ds.dashing){
+    // double-tap detected — start dash
+    ds.dashing=true;ds.timer=0;
+    return true;
+  }
+  if(dir!==0&&dir!==ds.dir){ds.dir=dir;ds.timer=12}
+  if(ds.timer>0)ds.timer--;
+  if(dir===0)ds.dashing=false;
+  return false;
+}
+
+// Body lean during attacks (adds dynamic pose)
+function getAttackBodyOffset(f){
+  if(f.state!=='attack'||!f.currentAttack)return {leanX:0,leanY:0,tilt:0};
+  const atk=f.currentAttack;const phase=f.attackPhase;
+  const isUp=atk.name&&(atk.name.includes('Upper')||atk.name.includes('Sky')||atk.name.includes('Rising')||atk.name.includes('Launch'));
+  const isDown=atk.name&&(atk.name.includes('Slam')||atk.name.includes('Drop')||atk.name.includes('Ground')||atk.name.includes('Meteor'));
+  const isFwd=atk.name&&(atk.name.includes('Charge')||atk.name.includes('Thrust')||atk.name.includes('Dash')||atk.name.includes('Heavy'));
+  if(phase==='startup'){
+    // wind-up: lean back
+    if(isFwd)return{leanX:-f.facing*4,leanY:0,tilt:-f.facing*0.1};
+    if(isUp)return{leanX:0,leanY:3,tilt:0};
+    if(isDown)return{leanX:0,leanY:-3,tilt:0};
+    return{leanX:-f.facing*2,leanY:0,tilt:-f.facing*0.05};
+  }
+  if(phase==='active'){
+    // strike: lean forward
+    if(isFwd)return{leanX:f.facing*6,leanY:-1,tilt:f.facing*0.15};
+    if(isUp)return{leanX:0,leanY:-5,tilt:0};
+    if(isDown)return{leanX:0,leanY:5,tilt:0};
+    return{leanX:f.facing*3,leanY:0,tilt:f.facing*0.08};
+  }
+  // recover: return to neutral
+  return{leanX:f.facing*1,leanY:0,tilt:f.facing*0.02};
+}
+
 // ===== ENCHANT SHIMMER =====
 function drawEnchantShimmer(x,y,w,h){
   const t=Date.now()/200;
@@ -495,7 +623,7 @@ const CHAR_DEFS={
     desc:'Adaptive Crafter - pulls different items each attack',
     bonusAttack:{dmg:14,kb:6,range:180,startup:6,active:4,recover:12,name:'Pixel Blast',projectile:true,projSpeed:11,projColor:'#E8943A',weaponDraw:null},
     attacks:{
-      neutral:{dmg:8,kb:3,range:45,startup:3,active:4,recover:8,name:'Sword Slash',weaponDraw:'diamond_sword'},
+      neutral:{dmg:5,kb:2,range:45,startup:3,active:6,recover:6,name:'Sword Slash',combo:2,weaponDraw:'diamond_sword'},
       forward:{dmg:9,kb:4,range:180,startup:6,active:3,recover:12,name:'Bow Shot',projectile:true,projSpeed:10,weaponDraw:'bow'},
       up:{dmg:5,kb:8,range:40,startup:4,active:4,recover:10,name:'Ender Pearl Launch',teleportUp:true,weaponDraw:null},
       down:{dmg:16,kb:6,range:55,startup:12,active:6,recover:16,name:'TNT Place',explosive:true,weaponDraw:'tnt'},
@@ -572,7 +700,7 @@ const CHAR_DEFS={
     desc:'Elytra Brawler - slow heavy fists, best air mobility',locked:true,
     bonusAttack:{dmg:18,kb:9,range:50,startup:4,active:4,recover:12,name:'Dive Bomb',elytraDive:true,weaponDraw:'fists'},
     attacks:{
-      neutral:{dmg:14,kb:5,range:40,startup:8,active:5,recover:12,name:'Heavy Punch',weaponDraw:'fists'},
+      neutral:{dmg:7,kb:3,range:40,startup:6,active:8,recover:10,name:'Heavy Punch',combo:2,weaponDraw:'fists'},
       forward:{dmg:18,kb:8,range:50,startup:12,active:5,recover:16,name:'Haymaker',weaponDraw:'fists'},
       up:{dmg:6,kb:4,range:35,startup:3,active:4,recover:8,name:'Elytra Launch',elytraLaunch:true,weaponDraw:'elytra'},
       down:{dmg:16,kb:6,range:55,startup:10,active:6,recover:14,name:'Fist Slam',shockwave:true,weaponDraw:'fists'},
@@ -620,7 +748,7 @@ const CHAR_DEFS={
     desc:'Web grabber & wall climber with body slams',
     bonusAttack:{dmg:8,kb:3,range:160,startup:5,active:4,recover:10,name:'Venom Spit',projectile:true,projSpeed:10,projColor:'#44CC22',poison:true,weaponDraw:null},
     attacks:{
-      neutral:{dmg:8,kb:3,range:40,startup:3,active:4,recover:7,name:'Fang Bite',weaponDraw:'spider_fangs'},
+      neutral:{dmg:4,kb:2,range:40,startup:2,active:6,recover:5,name:'Fang Bite',combo:2,weaponDraw:'spider_fangs'},
       forward:{dmg:2,kb:0,range:140,startup:4,active:6,recover:8,name:'Web Grab',grab:true,weaponDraw:'spider_web'},
       up:{dmg:6,kb:4,range:35,startup:3,active:4,recover:8,name:'Wall Pounce',elytraLaunch:true,weaponDraw:null},
       down:{dmg:14,kb:7,range:60,startup:6,active:6,recover:14,name:'Body Slam Dash',charge:true,weaponDraw:null},
@@ -683,7 +811,7 @@ const CHAR_DEFS={
     desc:'Mercenary Savage - bone club brawler, ferocious combos',locked:true,
     bonusAttack:{dmg:16,kb:8,range:55,startup:5,active:5,recover:12,name:'Primal Roar',shockwave:true,weaponDraw:'bone_club'},
     attacks:{
-      neutral:{dmg:10,kb:4,range:45,startup:4,active:4,recover:8,name:'Club Swing',weaponDraw:'bone_club'},
+      neutral:{dmg:5,kb:2,range:45,startup:3,active:8,recover:6,name:'Club Swing',combo:2,weaponDraw:'bone_club'},
       forward:{dmg:14,kb:6,range:52,startup:7,active:5,recover:12,name:'Charging Bash',charge:true,weaponDraw:'bone_club'},
       up:{dmg:11,kb:8,range:40,startup:5,active:4,recover:10,name:'Club Uppercut',weaponDraw:'bone_club'},
       down:{dmg:16,kb:6,range:58,startup:9,active:6,recover:14,name:'Ground Smash',shockwave:true,weaponDraw:'bone_club'},
@@ -699,7 +827,7 @@ const CHAR_DEFS={
     desc:'Mercenary Operative - fast tactical fighter, pistol & gadgets',
     bonusAttack:{dmg:12,kb:5,range:200,startup:5,active:4,recover:10,name:'Smoke Bomb',aoe:true,weaponDraw:null},
     attacks:{
-      neutral:{dmg:6,kb:2,range:200,startup:3,active:3,recover:8,name:'Quick Shot',projectile:true,projSpeed:14,projColor:'#FFD700',weaponDraw:'agent_pistol'},
+      neutral:{dmg:4,kb:1,range:200,startup:2,active:6,recover:6,name:'Quick Shot',combo:3,projectile:true,projSpeed:14,projColor:'#FFD700',weaponDraw:'agent_pistol'},
       forward:{dmg:10,kb:4,range:240,startup:6,active:3,recover:12,name:'Double Tap',projectile:true,projSpeed:14,multiShot:2,projColor:'#FFD700',weaponDraw:'agent_pistol'},
       up:{dmg:7,kb:6,range:160,startup:4,active:3,recover:9,name:'Rising Shot',projectile:true,projAngle:-1.0,projSpeed:12,projColor:'#FFD700',weaponDraw:'agent_pistol'},
       down:{dmg:4,kb:0,range:120,startup:4,active:6,recover:8,name:'Grapple Hook',grab:true,weaponDraw:null},
@@ -729,7 +857,7 @@ const CHAR_DEFS={
     desc:'Legendary stick figure - fire powers, laser eyes, immense strength',
     bonusAttack:{dmg:18,kb:8,range:250,startup:6,active:5,recover:14,name:'Laser Eyes',projectile:true,projSpeed:18,projColor:'#FF4400',weaponDraw:null},
     attacks:{
-      neutral:{dmg:10,kb:4,range:45,startup:3,active:4,recover:7,name:'Fire Punch',weaponDraw:'fire_fists'},
+      neutral:{dmg:5,kb:2,range:45,startup:2,active:8,recover:5,name:'Fire Punch',combo:3,weaponDraw:'fire_fists'},
       forward:{dmg:14,kb:6,range:180,startup:5,active:4,recover:10,name:'Fireball',projectile:true,projSpeed:11,projColor:'#FF6600',explosive:true,weaponDraw:null},
       up:{dmg:12,kb:8,range:42,startup:4,active:4,recover:10,name:'Fire Uppercut',weaponDraw:'fire_fists'},
       down:{dmg:16,kb:7,range:65,startup:8,active:5,recover:14,name:'Fire Slam',shockwave:true,weaponDraw:'fire_fists'},
@@ -745,7 +873,7 @@ const CHAR_DEFS={
     desc:'Virus-corrupted warrior - dual virus swords, corrupting attacks',
     bonusAttack:{dmg:15,kb:7,range:70,startup:6,active:5,recover:12,name:'Virus Surge',aoe:true,poison:true,weaponDraw:'virus_sword'},
     attacks:{
-      neutral:{dmg:10,kb:3,range:48,startup:3,active:5,recover:8,name:'Virus Slash',weaponDraw:'virus_sword'},
+      neutral:{dmg:5,kb:2,range:48,startup:2,active:8,recover:6,name:'Virus Slash',combo:3,weaponDraw:'virus_sword'},
       forward:{dmg:14,kb:6,range:55,startup:6,active:4,recover:12,name:'Dual Slash',charge:true,weaponDraw:'virus_sword'},
       up:{dmg:11,kb:7,range:42,startup:5,active:4,recover:10,name:'Corruption Upper',weaponDraw:'virus_sword'},
       down:{dmg:16,kb:5,range:65,startup:8,active:6,recover:14,name:'Virus Ground Stab',shockwave:true,weaponDraw:'virus_sword'},
@@ -1157,7 +1285,19 @@ class Fighter{
       this.attackTimer--;const atk=this.currentAttack;
       const elapsed=(atk.startup+atk.active+atk.recover)-this.attackTimer;
       if(elapsed<atk.startup)this.attackPhase='startup';
-      else if(elapsed<atk.startup+atk.active)this.attackPhase='active';
+      else if(elapsed<atk.startup+atk.active){
+        this.attackPhase='active';
+        // Multi-hit: reset _hit flag at intervals for combo attacks
+        if(atk.combo&&atk.combo>1){
+          const activeProgress=elapsed-atk.startup;
+          const hitInterval=Math.floor(atk.active/atk.combo);
+          if(activeProgress>0&&activeProgress%hitInterval===0&&atk._hit){
+            atk._hit=false;// allow another hit
+            atk._hitCount=(atk._hitCount||1)+1;
+            playSound(350+atk._hitCount*50,0.04,'square',0.06);// pitch up each hit
+          }
+        }
+      }
       else this.attackPhase='recover';
       if(this.attackTimer<=0){this.state='idle';this.currentAttack=null;this.attackPhase=''}
     }
@@ -1271,6 +1411,12 @@ class Fighter{
     const f=this;const c=f.def.color;
     const blink=f.invincible>0&&Math.floor(f.invincible/2)%2===0;if(blink)return;
     ctx.save();ctx.translate(f.x,f.y);
+
+    // Dynamic body lean during attacks
+    const bodyOff=getAttackBodyOffset(f);
+    if(bodyOff.leanX||bodyOff.leanY||bodyOff.tilt){
+      ctx.translate(bodyOff.leanX,bodyOff.leanY);ctx.rotate(bodyOff.tilt);
+    }
 
     // Mob-specific body proportions (applied only for non-mob stick figures that need it)
     const isTall=f.id==='enderman';
@@ -3586,9 +3732,24 @@ function checkAttackHit(attacker,defender){
     if(attacker.effectTimers.fireworkBoost>0&&!attacker.grounded)attacker.effectTimers.fireworkBoost=0;
     atk._hit=true;
 
-    // combo tracking
-    if(atk.combo&&attacker.comboTimer>0)attacker.combo++;else attacker.combo=1;
-    attacker.comboTimer=30;
+    // combo tracking (all hits count now)
+    if(attacker.comboTimer>0)attacker.combo++;else attacker.combo=1;
+    attacker.comboTimer=45;
+
+    // element-specific hit particles
+    if(attacker.id==='chosen_one')spawnSparks(defender.x,defender.y-20,'#FF4400',6);
+    else if(attacker.id==='dark_lord')spawnSparks(defender.x,defender.y-20,'#CC0000',5);
+    else if(attacker.id==='hacker')spawnSparks(defender.x,defender.y-20,'#00FF00',5);
+    else if(attacker.id==='the_mouse')spawnSparks(defender.x,defender.y-20,'#FFFFFF',4);
+    else if(atk.explosive||atk.endCrystal)spawnSparks(defender.x,defender.y-20,'#FF6600',8);
+    else if(atk.lightning)spawnSparks(defender.x,defender.y-20,'#FFE44D',8);
+
+    // combo bonus: increasing knockback for long combos
+    if(attacker.combo>=3){
+      const comboBonus=Math.min(attacker.combo*0.1,0.5);
+      defender.vx*=(1+comboBonus);defender.vy*=(1+comboBonus);
+    }
+
     if(atk.selfDmg){attacker.hp-=atk.selfDmg;spawnParticles(attacker.x,attacker.y-20,'#FF4444',6,3)}
   }
 }
@@ -3841,6 +4002,7 @@ function startFight(p1Char,p2Char,stageIdx,p2IsCPU=true,cpuDiff=0.5){
   fighters[1].ai=p2IsCPU?new AIController(cpuDiff):null;
   projectiles=[];activeItems=[];particles=[];plantedBombs=[];stageHazards=[];
   dmgNumbers=[];trails=[];sparks=[];speedLines=[];smoothHP=[100,100];hitstopFrames=0;flashAlpha=0;
+  dashState=[{dir:0,timer:0,dashing:false},{dir:0,timer:0,dashing:false}];
   hazardTimer=180+Math.floor(Math.random()*120);
   smashBall=null;smashBallTimer=300+Math.random()*180;finalSmashActive=false;finalSmashData=null;
   roundTimer=5400;itemSpawnTimer=300;countdownTimer=180;gameState=S.FIGHTING;
@@ -3849,10 +4011,19 @@ function startFight(p1Char,p2Char,stageIdx,p2IsCPU=true,cpuDiff=0.5){
 // ===== FIGHTER INPUT =====
 function handleFighterInput(f,up,down,left,right,attack,bonusAttack){
   if(f.state==='hitstun'||f.state==='dead'||countdownTimer>0)return;
+  const pIdx=f.playerNum-1;
+  const isDash=handleDash(pIdx,left,right);
+
   if(f.state!=='attack'){
     if(left){f.vx=-f.def.speed*f.speedMult;f.state=f.grounded?'walk':'jump'}
     else if(right){f.vx=f.def.speed*f.speedMult;f.state=f.grounded?'walk':'jump'}
     else if(f.grounded&&f.state!=='attack')f.state='idle';
+  }
+  // Dash: burst of speed + trail
+  if(isDash&&f.state!=='attack'&&f.grounded){
+    f.vx=f.facing*f.def.speed*2.5;
+    spawnTrail(f.x,f.y,f.def.color,12,45,0.25);
+    playSound(500,0.06,'sine',0.08);
   }
   if(up&&f.jumpCount<f.jumps&&f.state!=='attack'){if(!f._jumpHeld){f.vy=-f.def.jumpForce;f.grounded=false;f.jumpCount++;f.state='jump';sfxJump();f._jumpHeld=true}}
   if(!up)f._jumpHeld=false;
@@ -3871,6 +4042,11 @@ function handleFighterInput(f,up,down,left,right,attack,bonusAttack){
       const opp=fighters.find(o=>o!==f);if(opp)triggerFinalSmash(f,opp);
     }else{
       let dir='neutral';if(up)dir='up';else if(down)dir='down';else if(left||right)dir='forward';
+      // Dash attack: if currently dashing, boost the attack
+      if(dashState[pIdx].dashing&&f.grounded&&dir==='forward'){
+        f.vx=f.facing*f.def.speed*2;// lunge forward
+        spawnTrail(f.x,f.y,f.def.color,14,45,0.3);
+      }
       f.startAttack(dir);
     }
     f._attackHeld=true;
@@ -4013,7 +4189,7 @@ function draw(){
     // Drop shadows under fighters
     if(currentStage&&currentStage.platforms)fighters.forEach(f=>drawShadow(f,currentStage.platforms));
     drawTrails();drawParticles();drawSparks();drawSpeedLines();
-    fighters.forEach(f=>f.draw());drawDmgNumbers();drawHUD();drawCountdown();
+    fighters.forEach(f=>{drawElementalEffect(f);f.draw()});drawDmgNumbers();drawComboCounter();drawHUD();drawCountdown();
     drawFinalSmash();drawFlash();
     if(gameState===S.VICTORY)drawVictory();
   }
