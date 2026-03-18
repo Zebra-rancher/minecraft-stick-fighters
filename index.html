@@ -1615,52 +1615,197 @@ class Fighter{
       // mouth
       ctx.fillStyle='#8B6350';ctx.fillRect(-2,headY+4,4,2);
     }else if(isMerc){
-      // === MERCENARY BODY (thicker, armored) ===
+      // === MERCENARY BODIES (unique per character) ===
       const legSwing=Math.sin(f.walkCycle)*5;
-      // legs (thick)
-      ctx.fillStyle=f.id==='primal'?'#6B3A1E':f.id==='hazard'?'#2A5A12':'#3A2A1A';
-      ctx.save();ctx.translate(-4,bodyBot);ctx.rotate(legSwing*0.03);ctx.fillRect(-3,0,6,legLen);ctx.restore();
-      ctx.save();ctx.translate(4,bodyBot);ctx.rotate(-legSwing*0.03);ctx.fillRect(-3,0,6,legLen);ctx.restore();
-      // boots
-      ctx.fillStyle='#222';
-      ctx.fillRect(-8,bodyBot+legLen-4,7,5);ctx.fillRect(1,bodyBot+legLen-4,7,5);
-      // torso (wide, armored)
-      ctx.fillStyle=c;
-      ctx.fillRect(-9,bodyTop,18,bodyBot-bodyTop);
-      // armor plate
-      const armorColor=f.id==='ballista'?'#5A4A3A':f.id==='hazard'?'#1A3A0A':'#6B4A2A';
-      ctx.fillStyle=armorColor;
-      ctx.fillRect(-8,bodyTop+2,16,10);
-      // shoulder pads
-      ctx.fillStyle=armorColor;
-      ctx.fillRect(-13,bodyTop-1,6,6);ctx.fillRect(7,bodyTop-1,6,6);
-      // belt
-      ctx.fillStyle='#444';ctx.fillRect(-8,bodyBot-3,16,3);
-      ctx.fillStyle='#FFD700';ctx.fillRect(-2,bodyBot-3,4,3);// buckle
-      // arms
-      if(atkAnim==='active'||atkAnim==='startup'){
-        const atk=f.currentAttack;const progress=atkAnim==='startup'?0.5:1;
-        let weapAngle=f.facing*Math.PI*0.3*progress,weapX=f.facing*18*progress,weapY=armBaseY;
-        if(atk.name&&(atk.name.includes('Uppercut')||atk.name.includes('Upper')||atk.name.includes('Launch')||atk.name.includes('Sky'))){weapAngle=-Math.PI*0.6*progress;weapX=f.facing*10;weapY=armBaseY-10}
-        else if(atk.name&&(atk.name.includes('Slam')||atk.name.includes('Drop')||atk.name.includes('Ground')||atk.name.includes('Down'))){weapAngle=Math.PI*0.4*progress;weapX=f.facing*8;weapY=armBaseY+5}
-        ctx.fillStyle=c;
-        ctx.save();ctx.translate(f.facing*10,armBaseY+2);ctx.rotate(weapAngle*0.4);ctx.fillRect(0,-3,f.facing*12,7);ctx.restore();
-        const wType=atk.weaponDraw||f.def.weaponType;if(wType)drawWeapon(wType,weapX,weapY,weapAngle,f.facing,true,atkAnim==='active');
-        ctx.fillRect(-f.facing*10-3,armBaseY,7,16);
-      }else if(f.state==='hitstun'){
-        ctx.fillStyle=c;ctx.fillRect(-12,armBaseY,7,14);ctx.fillRect(5,armBaseY,7,14);
-      }else{
-        const aSwing=Math.sin(f.walkCycle)*0.3;
-        ctx.fillStyle=c;
-        ctx.save();ctx.translate(-10,armBaseY);ctx.rotate(aSwing);ctx.fillRect(-3,0,7,14);ctx.restore();
-        ctx.save();ctx.translate(10,armBaseY);ctx.rotate(-aSwing);ctx.fillRect(-4,0,7,14);ctx.restore();
-        drawWeapon(f.def.weaponType,f.facing*16,armBaseY+14,0.3,f.facing);
+      const mercArms=function(armColor){
+        if(atkAnim==='active'||atkAnim==='startup'){
+          const atk=f.currentAttack;const progress=atkAnim==='startup'?0.5:1;
+          let weapAngle=f.facing*Math.PI*0.3*progress,weapX=f.facing*18*progress,weapY=armBaseY;
+          if(atk.name&&(atk.name.includes('Upper')||atk.name.includes('Sky')||atk.name.includes('Launch'))){weapAngle=-Math.PI*0.6*progress;weapX=f.facing*10;weapY=armBaseY-10}
+          else if(atk.name&&(atk.name.includes('Slam')||atk.name.includes('Drop')||atk.name.includes('Ground')||atk.name.includes('Down'))){weapAngle=Math.PI*0.4*progress;weapX=f.facing*8;weapY=armBaseY+5}
+          ctx.fillStyle=armColor;
+          ctx.save();ctx.translate(f.facing*10,armBaseY+2);ctx.rotate(weapAngle*0.4);ctx.fillRect(0,-3,f.facing*12,7);ctx.restore();
+          const wType=atk.weaponDraw||f.def.weaponType;if(wType)drawWeapon(wType,weapX,weapY,weapAngle,f.facing,true,atkAnim==='active');
+          ctx.fillRect(-f.facing*10-3,armBaseY,7,16);
+        }else if(f.state==='hitstun'){
+          ctx.fillStyle=armColor;ctx.fillRect(-12,armBaseY,7,14);ctx.fillRect(5,armBaseY,7,14);
+        }else{
+          const aSwing=Math.sin(f.walkCycle)*0.3;
+          ctx.fillStyle=armColor;
+          ctx.save();ctx.translate(-10,armBaseY);ctx.rotate(aSwing);ctx.fillRect(-3,0,7,14);ctx.restore();
+          ctx.save();ctx.translate(10,armBaseY);ctx.rotate(-aSwing);ctx.fillRect(-4,0,7,14);ctx.restore();
+          drawWeapon(f.def.weaponType,f.facing*16,armBaseY+14,0.3,f.facing);
+        }
+      };
+
+      if(f.id==='ballista'){
+        // BALLISTA: Pixelated/chunky body, like a low-res sprite
+        // legs - pixelated blocks
+        ctx.fillStyle='#3A2A1A';
+        ctx.save();ctx.translate(-5,bodyBot);ctx.rotate(legSwing*0.03);
+        ctx.fillRect(-4,0,4,6);ctx.fillRect(-4,6,4,6);ctx.fillRect(-4,12,5,6);ctx.restore();
+        ctx.save();ctx.translate(5,bodyBot);ctx.rotate(-legSwing*0.03);
+        ctx.fillRect(0,0,4,6);ctx.fillRect(0,6,4,6);ctx.fillRect(-1,12,5,6);ctx.restore();
+        // boots - pixel blocks
+        ctx.fillStyle='#222';
+        ctx.fillRect(-10,bodyBot+legLen-3,8,4);ctx.fillRect(2,bodyBot+legLen-3,8,4);
+        // torso - pixel grid pattern (4x4 pixel blocks)
+        ctx.fillStyle='#8B7355';ctx.fillRect(-8,bodyTop,16,bodyBot-bodyTop);
+        // pixel grid overlay
+        ctx.fillStyle='#7A6345';
+        for(let px=0;px<4;px++)for(let py=0;py<8;py++){
+          if((px+py)%2===0)ctx.fillRect(-8+px*4,bodyTop+py*4,4,4);
+        }
+        // chest armor (pixelated plates)
+        ctx.fillStyle='#5A4A3A';ctx.fillRect(-7,bodyTop+2,14,8);
+        ctx.fillStyle='#4A3A2A';ctx.fillRect(-5,bodyTop+4,10,4);// darker center
+        // pixel shoulder pads
+        ctx.fillStyle='#5A4A3A';
+        ctx.fillRect(-12,bodyTop-2,5,6);ctx.fillRect(7,bodyTop-2,5,6);
+        ctx.fillRect(-11,bodyTop+4,4,3);ctx.fillRect(7,bodyTop+4,4,3);
+        // arms
+        mercArms('#8B7355');
+        // head - SQUARE pixelated head (key visual: looks like low-res pixel art)
+        ctx.fillStyle='#8B7355';ctx.fillRect(-9,headY-9,18,18);
+        // pixel grid on head
+        ctx.fillStyle='#7A6345';
+        for(let px=0;px<4;px++)for(let py=0;py<4;py++){
+          if((px+py)%2===0)ctx.fillRect(-9+px*4+1,headY-9+py*4+1,4,4);
+        }
+        // visor/scope (one eye has a red scope lens)
+        ctx.fillStyle='#fff';ctx.fillRect(f.facing*3-2,headY-3,3,3);
+        ctx.fillStyle='#CC0000';ctx.fillRect(f.facing*6-1,headY-3,4,4);// red scope lens
+        ctx.fillStyle='#880000';ctx.fillRect(f.facing*6,headY-2,2,2);// scope pupil
+        // scope frame
+        ctx.strokeStyle='#444';ctx.lineWidth=1;
+        ctx.strokeRect(f.facing*6-2,headY-4,6,6);
+
+      }else if(f.id==='hazard'){
+        // HAZARD: Stop-sign shaped head, warning colors, biohazard theme
+        // legs - hazard-striped
+        ctx.fillStyle='#2A5A12';
+        ctx.save();ctx.translate(-4,bodyBot);ctx.rotate(legSwing*0.03);ctx.fillRect(-3,0,6,legLen);ctx.restore();
+        ctx.save();ctx.translate(4,bodyBot);ctx.rotate(-legSwing*0.03);ctx.fillRect(-3,0,6,legLen);ctx.restore();
+        // hazard stripe on legs
+        ctx.fillStyle='#1A3A08';
+        ctx.fillRect(-7,bodyBot+4,6,3);ctx.fillRect(1,bodyBot+4,6,3);
+        ctx.fillRect(-7,bodyBot+10,6,3);ctx.fillRect(1,bodyBot+10,6,3);
+        // boots
+        ctx.fillStyle='#111';
+        ctx.fillRect(-8,bodyBot+legLen-4,7,5);ctx.fillRect(1,bodyBot+legLen-4,7,5);
+        // torso - hazmat suit
+        ctx.fillStyle='#44CC22';ctx.fillRect(-9,bodyTop,18,bodyBot-bodyTop);
+        // hazard stripes on torso
+        ctx.fillStyle='#FFD700';
+        ctx.fillRect(-9,bodyTop+3,18,2);ctx.fillRect(-9,bodyBot-5,18,2);
+        // biohazard symbol on chest
+        ctx.fillStyle='#222';ctx.fillRect(-4,bodyTop+8,8,8);
+        ctx.fillStyle='#FFD700';
+        ctx.beginPath();ctx.arc(0,bodyTop+12,3,0,Math.PI*2);ctx.fill();
+        ctx.fillRect(-1,bodyTop+8,2,3);ctx.fillRect(-3,bodyTop+11,2,2);ctx.fillRect(1,bodyTop+11,2,2);
+        // arms
+        mercArms('#44CC22');
+        // HEAD: STOP SIGN SHAPE (octagon)
+        ctx.fillStyle='#CC0000';
+        ctx.beginPath();
+        const r=11;
+        for(let i=0;i<8;i++){
+          const a=Math.PI*2*i/8-Math.PI/8;
+          const px=Math.cos(a)*r,py=headY+Math.sin(a)*r;
+          i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+        }
+        ctx.closePath();ctx.fill();
+        // white border
+        ctx.strokeStyle='#FFF';ctx.lineWidth=2;ctx.stroke();
+        // STOP text
+        ctx.fillStyle='#FFF';ctx.font='bold 7px monospace';ctx.textAlign='center';
+        ctx.fillText('STOP',0,headY+3);
+        // gas mask tubes coming down
+        ctx.strokeStyle='#555';ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(-5,headY+8);ctx.lineTo(-7,headY+14);ctx.lineTo(-4,bodyTop+2);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(5,headY+8);ctx.lineTo(7,headY+14);ctx.lineTo(4,bodyTop+2);ctx.stroke();
+
+      }else if(f.id==='primal'){
+        // PRIMAL: Cave drawing style - rough, scratchy, earthy
+        // legs - rough/uneven like cave art
+        ctx.fillStyle='#A0522D';
+        ctx.save();ctx.translate(-5,bodyBot);ctx.rotate(legSwing*0.03);
+        ctx.fillRect(-3,0,5,legLen-2);ctx.fillRect(-4,legLen-4,7,5);ctx.restore();
+        ctx.save();ctx.translate(5,bodyBot);ctx.rotate(-legSwing*0.03);
+        ctx.fillRect(-2,0,5,legLen-2);ctx.fillRect(-3,legLen-4,7,5);ctx.restore();
+        // feet - bare/wrapped
+        ctx.fillStyle='#8B4513';
+        ctx.fillRect(-9,bodyBot+legLen-2,7,3);ctx.fillRect(2,bodyBot+legLen-2,7,3);
+        // torso - rough, cave-drawing style body (uneven edges)
+        ctx.fillStyle='#A0522D';
+        ctx.beginPath();ctx.moveTo(-8,bodyTop);ctx.lineTo(-10,bodyTop+8);ctx.lineTo(-9,bodyBot);
+        ctx.lineTo(9,bodyBot);ctx.lineTo(10,bodyTop+8);ctx.lineTo(8,bodyTop);ctx.closePath();ctx.fill();
+        // fur/hide patches
+        ctx.fillStyle='#8B6340';
+        ctx.fillRect(-7,bodyTop+3,5,5);ctx.fillRect(2,bodyTop+8,5,4);ctx.fillRect(-4,bodyBot-6,8,4);
+        // scratch marks on body (like cave wall scratches)
+        ctx.strokeStyle='#6B3A1E';ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(-5,bodyTop+2);ctx.lineTo(-3,bodyTop+10);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(2,bodyTop+4);ctx.lineTo(4,bodyTop+12);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(-2,bodyBot-8);ctx.lineTo(1,bodyBot-2);ctx.stroke();
+        // bone necklace
+        ctx.fillStyle='#E8DCC8';
+        for(let i=-6;i<=6;i+=3){ctx.fillRect(i,bodyTop-1,2,3)}
+        // arms
+        mercArms('#A0522D');
+        // head - rough, cave-drawing style (lumpy/uneven)
+        ctx.fillStyle='#A0522D';
+        ctx.beginPath();ctx.moveTo(-9,headY-6);ctx.lineTo(-10,headY+2);ctx.lineTo(-7,headY+9);
+        ctx.lineTo(7,headY+9);ctx.lineTo(10,headY+2);ctx.lineTo(9,headY-6);
+        ctx.lineTo(5,headY-10);ctx.lineTo(-5,headY-10);ctx.closePath();ctx.fill();
+        // wild hair (messy lines)
+        ctx.strokeStyle='#5C2E0A';ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(-6,headY-10);ctx.lineTo(-10,headY-16);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(-2,headY-10);ctx.lineTo(-3,headY-18);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(2,headY-10);ctx.lineTo(5,headY-17);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(6,headY-10);ctx.lineTo(10,headY-14);ctx.stroke();
+        // cave-painting style eyes (simple dots)
+        ctx.fillStyle='#FFF';
+        ctx.beginPath();ctx.arc(f.facing*3,headY-2,2.5,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.arc(f.facing*7,headY-2,2.5,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#111';
+        ctx.beginPath();ctx.arc(f.facing*3,headY-2,1.5,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.arc(f.facing*7,headY-2,1.5,0,Math.PI*2);ctx.fill();
+        // war paint (red stripes across face)
+        ctx.fillStyle='rgba(180,40,20,0.6)';
+        ctx.fillRect(-7,headY-1,14,2);ctx.fillRect(-6,headY+4,12,2);
+
+      }else if(f.id==='agent'){
+        // AGENT: Clean tactical look, WHITE HEAD, dark suit
+        // legs - tactical pants
+        ctx.fillStyle='#1A2530';
+        ctx.save();ctx.translate(-4,bodyBot);ctx.rotate(legSwing*0.03);ctx.fillRect(-3,0,6,legLen);ctx.restore();
+        ctx.save();ctx.translate(4,bodyBot);ctx.rotate(-legSwing*0.03);ctx.fillRect(-3,0,6,legLen);ctx.restore();
+        // tactical boots
+        ctx.fillStyle='#111';
+        ctx.fillRect(-8,bodyBot+legLen-4,7,5);ctx.fillRect(1,bodyBot+legLen-4,7,5);
+        // torso - dark tactical vest
+        ctx.fillStyle='#2C3E50';ctx.fillRect(-9,bodyTop,18,bodyBot-bodyTop);
+        // vest details
+        ctx.fillStyle='#1A2530';
+        ctx.fillRect(-8,bodyTop+2,7,6);ctx.fillRect(1,bodyTop+2,7,6);// vest pockets
+        ctx.fillStyle='#3A5060';ctx.fillRect(-7,bodyTop+4,5,3);ctx.fillRect(2,bodyTop+4,5,3);// pocket flaps
+        // belt with holster
+        ctx.fillStyle='#222';ctx.fillRect(-9,bodyBot-3,18,3);
+        ctx.fillStyle='#444';ctx.fillRect(f.facing*6,bodyBot-5,4,6);// holster
+        // arms
+        mercArms('#2C3E50');
+        // head - WHITE (key feature: Agent has a white head)
+        ctx.fillStyle='#F5F5F5';ctx.beginPath();ctx.arc(0,headY,10,0,Math.PI*2);ctx.fill();
+        // sunglasses (dark, tactical)
+        ctx.fillStyle='#111';
+        ctx.fillRect(-8,headY-4,16,5);// full sunglass band
+        // lens shine
+        ctx.fillStyle='rgba(255,255,255,0.15)';
+        ctx.fillRect(-6,headY-3,5,2);ctx.fillRect(2,headY-3,5,2);
+        // slight frown
+        ctx.fillStyle='#888';ctx.fillRect(-3,headY+4,6,1);
       }
-      // head (round but with helmet/gear)
-      ctx.fillStyle=c;ctx.beginPath();ctx.arc(0,headY,10,0,Math.PI*2);ctx.fill();
-      // eyes
-      ctx.fillStyle='#fff';ctx.fillRect(f.facing*3-2,headY-3,3,3);ctx.fillRect(f.facing*6-1,headY-3,3,3);
-      ctx.fillStyle='#111';ctx.fillRect(f.facing*3-1,headY-2,2,2);ctx.fillRect(f.facing*6,headY-2,2,2);
     }else{
       // === DEFAULT STICK FIGURE BODY ===
       // legs
@@ -1779,34 +1924,7 @@ class Fighter{
       ctx.fillStyle='#888';ctx.fillRect(-3,headY-2,2,4);// nose guard
     }
 
-    // Mercenary indicators
-    if(f.id==='ballista'){
-      // scope/visor on head
-      ctx.fillStyle='#555';ctx.fillRect(f.facing*8,headY-5,6,3);
-      ctx.fillStyle='#88F';ctx.fillRect(f.facing*10,headY-4,3,1);
-    }
-    if(f.id==='hazard'){
-      // gas mask
-      ctx.fillStyle='#555';ctx.fillRect(-5,headY+1,10,6);
-      ctx.fillStyle='#44CC22';ctx.fillRect(-3,headY+2,2,3);ctx.fillRect(1,headY+2,2,3);
-      // toxic drip
-      const t=Date.now()/200;
-      ctx.fillStyle=`rgba(68,204,34,${0.3+Math.sin(t)*0.2})`;
-      ctx.fillRect(-1,headY+7+Math.sin(t)*2,2,3);
-    }
-    if(f.id==='primal'){
-      // war paint stripes
-      ctx.fillStyle='#8B0000';
-      ctx.fillRect(-6,headY-2,3,6);ctx.fillRect(3,headY-2,3,6);
-      // bone necklace
-      ctx.fillStyle='#E8DCC8';
-      for(let i=0;i<3;i++)ctx.fillRect(-6+i*5,-44,4,3);
-    }
-    if(f.id==='agent'){
-      // sunglasses
-      ctx.fillStyle='#111';ctx.fillRect(-7,headY-5,14,4);
-      ctx.fillStyle='rgba(0,200,255,0.3)';ctx.fillRect(-6,headY-4,5,2);ctx.fillRect(1,headY-4,5,2);
-    }
+    // (mercenary visuals are now built into their body rendering above)
 
     // effects
     if(f.rageActive||f.effectTimers.rage>0){
