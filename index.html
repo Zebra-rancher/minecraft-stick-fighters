@@ -3578,7 +3578,7 @@ function drawMinigame(){
 }
 
 // ===== GAME STATE =====
-const S={MENU:0,CHAR_SELECT:1,STAGE_SELECT:2,FIGHTING:3,VICTORY:4,STORY_INTRO:5,PAUSE:6,CREDITS:7,CAMP_SELECT:8,MINIGAME:9};
+const S={MENU:0,CHAR_SELECT:1,STAGE_SELECT:2,FIGHTING:3,VICTORY:4,STORY_INTRO:5,PAUSE:6,CREDITS:7,CAMP_SELECT:8,MINIGAME:9,MOB_SMASH:10};
 let gameState=S.MENU,menuSelection=0,charSelectP1=0,charSelectP2=1,stageSelect=0;
 let gameMode='vs_cpu';
 let fighters=[],currentStage=null,roundTimer=5400,itemSpawnTimer=0,victoryTimer=0;
@@ -3586,6 +3586,43 @@ let storyLevel=0,menuBlink=0,countdownTimer=0;
 const charOrder=['second_coming','red','blue','green','spider','yellow','purple','skeleton','enderman','king_orange','ballista','hazard','primal','agent','the_mouse','chosen_one','dark_lord','hacker','bedwars'];
 const storyOpponents=['red','blue','green','spider','yellow','skeleton','purple','enderman','king_orange','king_orange','ballista','hazard','primal','agent','the_mouse','chosen_one','dark_lord','hacker','bedwars'];
 const storyStages=[0,3,4,0,1,3,2,4,1,2,0,1,3,4,0,2,1,4,3]; // Plains,Jungle,Village,Plains,Nether,Jungle,End,Village,Nether,End,Plains,Nether,Jungle,End,Plains,End,Nether,End,Jungle
+
+// ===== MOB SMASH STATE =====
+let mobSmash={kills:0,wave:1,spawnTimer:0,spawnInterval:120,maxEnemies:3,enemies:[],gameOver:false,
+  highScore:0,waveKills:0,waveTarget:5,player:null,stageIdx:0};
+try{const ms=localStorage.getItem('mcfighters_mobsmash');if(ms)mobSmash.highScore=JSON.parse(ms).highScore||0}catch(e){}
+
+function startMobSmash(charId,stageIdx){
+  const stage=STAGE_DEFS[stageIdx%STAGE_DEFS.length];currentStage=stage;
+  mobSmash.kills=0;mobSmash.wave=1;mobSmash.spawnTimer=60;mobSmash.spawnInterval=120;
+  mobSmash.maxEnemies=3;mobSmash.enemies=[];mobSmash.gameOver=false;
+  mobSmash.waveKills=0;mobSmash.waveTarget=5;mobSmash.stageIdx=stageIdx;
+  const sx=stage.platforms[0].x+stage.platforms[0].w/2;
+  mobSmash.player=new Fighter(charId,sx,1,1);
+  fighters=[mobSmash.player];
+  projectiles=[];activeItems=[];particles=[];plantedBombs=[];stageHazards=[];
+  dmgNumbers=[];trails=[];sparks=[];speedLines=[];smoothHP=[100,100];hitstopFrames=0;flashAlpha=0;
+  dashState=[{dir:0,timer:0,dashing:false},{dir:0,timer:0,dashing:false}];
+  smashBall=null;smashBallTimer=600;finalSmashActive=false;finalSmashData=null;
+  countdownTimer=120;itemSpawnTimer=300;gameState=S.MOB_SMASH;
+}
+
+function spawnMobEnemy(){
+  const avail=charOrder.filter(c=>c!==mobSmash.player.id);
+  const id=avail[Math.floor(Math.random()*avail.length)];
+  const plat=currentStage.platforms[0];
+  const side=Math.random()>0.5?1:-1;
+  const sx=side>0?plat.x+plat.w+20:plat.x-20;
+  const enemy=new Fighter(id,sx,-side,2+mobSmash.enemies.length);
+  // scale difficulty by wave
+  const diff=Math.min(0.3+mobSmash.wave*0.06,0.95);
+  enemy.ai=new AIController(diff);
+  // reduce enemy HP based on wave (they're fodder, not bosses)
+  enemy.maxHp=Math.max(30,60-mobSmash.wave*2);
+  enemy.hp=enemy.maxHp;
+  mobSmash.enemies.push(enemy);
+  fighters.push(enemy);
+}
 
 // ===== MINIGAME STATE =====
 let campSelect=0,minigameState=null,minigameChar=null,minigamePhase='instructions',minigameTimer=0;
@@ -3936,8 +3973,9 @@ function drawMainMenu(){
   menuBlink+=0.05;
   drawText('MINECRAFT',W/2,100,48,'#5DE8E0');drawText('STICK FIGHTERS',W/2,150,40,'#FFD700');
   ctx.globalAlpha=0.5+Math.sin(menuBlink)*0.5;drawText('Press SPACE or ENTER',W/2,480,14,'#aaa');ctx.globalAlpha=1;
-  const opts=['VS CPU','1v1 Local','Story Mode','Training Camp','Training','Credits'];
-  opts.forEach((o,i)=>{const y=210+i*40;const sel=i===menuSelection;if(sel){drawBox(W/2-120,y-18,240,34,'#2a1a4e','#5DE8E0');drawText('> '+o+' <',W/2,y+2,20,'#5DE8E0')}else drawText(o,W/2,y+2,18,'#888')});
+  const opts=['VS CPU','1v1 Local','Story Mode','Mob Smash','Training Camp','Training','Credits'];
+  opts.forEach((o,i)=>{const y=200+i*36;const sel=i===menuSelection;if(sel){drawBox(W/2-120,y-16,240,30,'#2a1a4e',o==='Mob Smash'?'#FF4444':'#5DE8E0');drawText('> '+o+' <',W/2,y+2,18,o==='Mob Smash'?'#FF4444':'#5DE8E0')}else drawText(o,W/2,y+2,16,'#888')});
+  if(mobSmash.highScore>0)drawText(`Mob Smash High Score: ${mobSmash.highScore}`,W/2,H-40,11,'#FF4444');
   drawText('Arrow Keys + Space = P1 | WASD + E = P2 | M/R = Bonus Attack',W/2,H-20,11,'#555');
 }
 
@@ -4199,6 +4237,7 @@ function handleFighterInput(f,up,down,left,right,attack,bonusAttack){
 // ===== MAIN UPDATE =====
 function update(){
   if(gameState===S.MINIGAME){updateMinigame();return}
+  if(gameState===S.MOB_SMASH){updateMobSmash();return}
   // Always update visual effects even during hitstop
   updateDmgNumbers();updateTrails();updateSparks();updateSmoothHP();
   if(gameState===S.FIGHTING){
@@ -4313,6 +4352,167 @@ function update(){
   }
 }
 
+// ===== MOB SMASH UPDATE =====
+function updateMobSmash(){
+  updateDmgNumbers();updateTrails();updateSparks();updateSmoothHP();
+  if(countdownTimer>0){countdownTimer--;return}
+  if(hitstopFrames>0){hitstopFrames--;return}
+  if(mobSmash.gameOver)return;
+
+  const p=mobSmash.player;
+  // player input
+  handleFighterInput(p,keys['ArrowUp'],keys['ArrowDown'],keys['ArrowLeft'],keys['ArrowRight'],keys['Space'],keys['KeyM']);
+  // update all fighters
+  const allF=[p,...mobSmash.enemies.filter(e=>e.hp>0)];
+  fighters=allF;// keep fighters array in sync
+  p.update(currentStage.platforms,mobSmash.enemies[0]||null,currentStage);
+  mobSmash.enemies.forEach(e=>{
+    if(e.hp>0){
+      // AI targets player
+      if(e.ai)e.ai.update(e,p,currentStage.platforms);
+      e.update(currentStage.platforms,p,currentStage);
+    }
+  });
+  // combat: player vs all enemies
+  mobSmash.enemies.forEach(e=>{
+    if(e.hp>0){checkAttackHit(p,e);checkAttackHit(e,p)}
+  });
+  // enemy vs enemy? no — they all target player
+
+  // projectiles
+  for(let i=projectiles.length-1;i>=0;i--){
+    const pr=projectiles[i];pr.update();
+    if(pr.life<=0||pr.x<-50||pr.x>W+50||pr.y>H+50){projectiles.splice(i,1);continue}
+    fighters.forEach(f=>{
+      if(f!==pr.owner&&f.invincible<=0&&Math.abs(pr.x-f.x)<20&&Math.abs(pr.y-(f.y-25))<30){
+        if(pr.explosive){sfxExplode();shake(6);spawnParticles(pr.x,pr.y,'#FF4444',12,5);
+          fighters.forEach(ff=>{if(Math.abs(ff.x-pr.x)<60&&Math.abs(ff.y-pr.y)<50)ff.takeDamage(pr.dmg,(ff.x-pr.x)*0.3,-5,pr.owner)});
+        }else{f.takeDamage(pr.dmg,pr.vx*0.5,-3,pr.owner)}
+        projectiles.splice(i,1);
+      }
+    });
+  }
+  // planted bombs
+  for(let i=plantedBombs.length-1;i>=0;i--){
+    if(plantedBombs[i].update()){
+      const b=plantedBombs[i];sfxExplode();shake(8);spawnParticles(b.x,b.y-8,'#FF4444',20,6);
+      fighters.forEach(f=>{if(Math.abs(f.x-b.x)<b.radius&&Math.abs(f.y-b.y)<b.radius)f.takeDamage(b.dmg,(f.x-b.x)*0.3,-6,b.owner)});
+      plantedBombs.splice(i,1);
+    }
+  }
+  // items
+  itemSpawnTimer--;
+  if(itemSpawnTimer<=0&&activeItems.length<2){
+    const def=ITEM_DEFS[Math.floor(Math.random()*ITEM_DEFS.length)];
+    const plat=currentStage.platforms[Math.floor(Math.random()*currentStage.platforms.length)];
+    activeItems.push(new GameItem(plat.x+Math.random()*plat.w,plat.y-60,def));itemSpawnTimer=300+Math.random()*200;
+  }
+  for(let i=activeItems.length-1;i>=0;i--){
+    const item=activeItems[i];item.update(currentStage.platforms);if(item.life<=0){activeItems.splice(i,1);continue}
+    // only player picks up items
+    if(Math.abs(item.x-p.x)<25&&Math.abs(item.y-p.y+15)<30){
+      const eff=item.def;
+      if(eff.effect==='heal'){p.hp=Math.min(p.maxHp,p.hp+eff.value);spawnParticles(p.x,p.y-20,'#5F5',8,2)}
+      if(eff.effect==='speed'){p.speedMult=eff.value;p.effectTimers.speed=eff.duration}
+      if(eff.effect==='strength'){p.strengthMult=eff.value;p.effectTimers.strength=eff.duration}
+      if(eff.effect==='shield'){p.shielded=true;p.effectTimers.shield=eff.duration}
+      sfxItem();activeItems.splice(i,1);
+    }
+  }
+
+  // death check — enemies
+  fighters.forEach(f=>{if(f.y>currentStage.deathY||f.x<-100||f.x>W+100)f.hp=0});
+  for(let i=mobSmash.enemies.length-1;i>=0;i--){
+    if(mobSmash.enemies[i].hp<=0){
+      const dead=mobSmash.enemies[i];
+      sfxKO();spawnParticles(dead.x,dead.y-20,dead.def.color,15,5);
+      mobSmash.enemies.splice(i,1);
+      mobSmash.kills++;mobSmash.waveKills++;
+      // heal player a bit per kill
+      p.hp=Math.min(p.maxHp,p.hp+8);
+      spawnDmgNumber(p.x,p.y-60,'+8','#44FF44');
+    }
+  }
+  // wave progression
+  if(mobSmash.waveKills>=mobSmash.waveTarget){
+    mobSmash.wave++;mobSmash.waveKills=0;
+    mobSmash.waveTarget=Math.min(5+mobSmash.wave*2,20);
+    mobSmash.spawnInterval=Math.max(40,120-mobSmash.wave*8);
+    mobSmash.maxEnemies=Math.min(3+Math.floor(mobSmash.wave/2),8);
+    // full heal between waves
+    p.hp=p.maxHp;p.damage=0;
+    spawnParticles(p.x,p.y-20,'#FFD700',20,5);
+    playSound(800,0.2,'sine',0.15);
+  }
+  // spawn enemies
+  mobSmash.spawnTimer--;
+  if(mobSmash.spawnTimer<=0&&mobSmash.enemies.length<mobSmash.maxEnemies){
+    spawnMobEnemy();mobSmash.spawnTimer=mobSmash.spawnInterval;
+  }
+  // player death = game over
+  if(p.hp<=0){
+    mobSmash.gameOver=true;
+    if(mobSmash.kills>mobSmash.highScore){
+      mobSmash.highScore=mobSmash.kills;
+      try{localStorage.setItem('mcfighters_mobsmash',JSON.stringify({highScore:mobSmash.highScore}))}catch(e){}
+    }
+    sfxKO();shake(15);
+  }
+
+  updateParticles();if(shakeTime>0)shakeTime--;else shakeAmount=0;
+}
+
+function drawMobSmashHUD(){
+  const p=mobSmash.player;if(!p)return;
+  // player HP bar (centered top)
+  const bw=300,bx=(W-bw)/2,by=15;
+  ctx.fillStyle='#222';ctx.fillRect(bx-2,by-2,bw+4,18);
+  const hpPct=Math.max(0,p.hp/p.maxHp);
+  const hpColor=hpPct>0.5?'#44CC44':hpPct>0.25?'#CCAA22':'#CC3333';
+  ctx.fillStyle=hpColor;ctx.fillRect(bx,by,bw*hpPct,14);
+  ctx.strokeStyle='#555';ctx.lineWidth=1;ctx.strokeRect(bx-2,by-2,bw+4,18);
+  drawText(`${Math.ceil(p.hp)} HP`,W/2,by+12,12,'#fff');
+  drawText(p.def.name,W/2,by+28,10,p.def.color);
+
+  // kills counter (top left)
+  drawText(`KILLS: ${mobSmash.kills}`,80,25,22,'#FF4444');
+  // wave indicator (top right)
+  drawText(`WAVE ${mobSmash.wave}`,W-80,25,20,'#FFD700');
+  // wave progress bar
+  const wpw=100,wpx=W-130,wpy=35;
+  ctx.fillStyle='#222';ctx.fillRect(wpx,wpy,wpw,8);
+  ctx.fillStyle='#FFD700';ctx.fillRect(wpx,wpy,wpw*(mobSmash.waveKills/mobSmash.waveTarget),8);
+  drawText(`${mobSmash.waveKills}/${mobSmash.waveTarget}`,W-80,wpy+18,9,'#aaa');
+
+  // enemy count
+  const alive=mobSmash.enemies.filter(e=>e.hp>0).length;
+  if(alive>0)drawText(`${alive} enem${alive===1?'y':'ies'} alive`,W/2,H-20,11,'#888');
+
+  // enemy HP bars (small, above each enemy)
+  mobSmash.enemies.forEach(e=>{
+    if(e.hp>0){
+      const ehp=Math.max(0,e.hp/e.maxHp);
+      ctx.fillStyle='#222';ctx.fillRect(e.x-20,e.y-65,40,5);
+      ctx.fillStyle='#CC3333';ctx.fillRect(e.x-20,e.y-65,40*ehp,5);
+      drawText(e.def.name,e.x,e.y-72,7,e.def.color);
+    }
+  });
+}
+
+function drawMobSmashGameOver(){
+  ctx.fillStyle='rgba(0,0,0,0.75)';ctx.fillRect(0,0,W,H);
+  drawText('GAME OVER',W/2,H/2-80,48,'#FF4444');
+  drawText(`You defeated ${mobSmash.kills} enemies!`,W/2,H/2-30,22,'#FFD700');
+  drawText(`Wave reached: ${mobSmash.wave}`,W/2,H/2+5,18,'#aaa');
+  if(mobSmash.kills>=mobSmash.highScore&&mobSmash.kills>0){
+    const t=Date.now()/200;
+    drawText('NEW HIGH SCORE!',W/2,H/2+40,24,`hsl(${t%360*5},100%,60%)`);
+  }else{
+    drawText(`High Score: ${mobSmash.highScore}`,W/2,H/2+40,16,'#888');
+  }
+  drawText('Press SPACE to return to menu',W/2,H/2+90,14,'#aaa');
+}
+
 // ===== MAIN DRAW =====
 function draw(){
   ctx.save();if(shakeAmount>0&&shakeTime>0)ctx.translate(Math.random()*shakeAmount-shakeAmount/2,Math.random()*shakeAmount-shakeAmount/2);
@@ -4323,7 +4523,16 @@ function draw(){
   else if(gameState===S.MINIGAME)drawMinigame();
   else if(gameState===S.CREDITS)drawCredits();
   else if(gameState===S.STORY_INTRO)drawStoryIntro();
-  else if(gameState===S.PAUSE){drawStage(currentStage);fighters.forEach(f=>f.draw());drawHUD();drawPause()}
+  else if(gameState===S.PAUSE){drawStage(currentStage);fighters.forEach(f=>f.draw());if(gameMode==='mob_smash')drawMobSmashHUD();else drawHUD();drawPause()}
+  else if(gameState===S.MOB_SMASH){
+    drawStage(currentStage);activeItems.forEach(it=>it.draw());
+    plantedBombs.forEach(b=>b.draw());projectiles.forEach(p=>p.draw());
+    if(currentStage&&currentStage.platforms)fighters.forEach(f=>drawShadow(f,currentStage.platforms));
+    drawTrails();drawParticles();drawSparks();drawSpeedLines();
+    fighters.forEach(f=>{drawElementalEffect(f);f.draw()});drawDmgNumbers();drawComboCounter();
+    drawMobSmashHUD();drawCountdown();drawFlash();
+    if(mobSmash.gameOver)drawMobSmashGameOver();
+  }
   else if(gameState===S.FIGHTING||gameState===S.VICTORY){
     drawStage(currentStage);drawHazards();activeItems.forEach(it=>it.draw());
     if(smashBall&&smashBall.active)smashBall.draw();
@@ -4342,15 +4551,16 @@ function draw(){
 document.addEventListener('keydown',e=>{
   initAudio();const k=e.code;
   if(gameState===S.MENU){
-    if(k==='ArrowUp'){menuSelection=(menuSelection-1+6)%6;sfxMenu()}
-    if(k==='ArrowDown'){menuSelection=(menuSelection+1)%6;sfxMenu()}
+    if(k==='ArrowUp'){menuSelection=(menuSelection-1+7)%7;sfxMenu()}
+    if(k==='ArrowDown'){menuSelection=(menuSelection+1)%7;sfxMenu()}
     if(k==='Space'||k==='Enter'){sfxSelect();
       if(menuSelection===0){gameMode='vs_cpu';gameState=S.CHAR_SELECT}
       else if(menuSelection===1){gameMode='local';gameState=S.CHAR_SELECT}
       else if(menuSelection===2){gameMode='story';storyLevel=0;gameState=S.STORY_INTRO}
-      else if(menuSelection===3){campSelect=0;gameState=S.CAMP_SELECT}
-      else if(menuSelection===4){gameMode='training';gameState=S.CHAR_SELECT}
-      else if(menuSelection===5)gameState=S.CREDITS}
+      else if(menuSelection===3){gameMode='mob_smash';gameState=S.CHAR_SELECT}
+      else if(menuSelection===4){campSelect=0;gameState=S.CAMP_SELECT}
+      else if(menuSelection===5){gameMode='training';gameState=S.CHAR_SELECT}
+      else if(menuSelection===6)gameState=S.CREDITS}
   }else if(gameState===S.CHAR_SELECT){
     if(k==='ArrowLeft'){charSelectP1=(charSelectP1-1+charOrder.length)%charOrder.length;sfxMenu()}
     if(k==='ArrowRight'){charSelectP1=(charSelectP1+1)%charOrder.length;sfxMenu()}
@@ -4365,20 +4575,25 @@ document.addEventListener('keydown',e=>{
     if(k==='ArrowLeft'){stageSelect=(stageSelect-1+allStages.length)%allStages.length;sfxMenu()}
     if(k==='ArrowRight'){stageSelect=(stageSelect+1)%allStages.length;sfxMenu()}
     if(k==='Space'||k==='Enter'){sfxSelect();
-      const p1Id=charOrder[charSelectP1];let p2Id=charOrder[charSelectP2];
+      const p1Id=charOrder[charSelectP1];
+      if(gameMode==='mob_smash'){startMobSmash(p1Id,stageSelect)}
+      else{let p2Id=charOrder[charSelectP2];
       if(gameMode!=='local'){const avail=charOrder.filter(c=>!CHAR_DEFS[c].locked||saveData.unlocked.includes(c));p2Id=avail[Math.floor(Math.random()*avail.length)]}
-      startFight(p1Id,p2Id,stageSelect,gameMode!=='local',gameMode==='training'?0.2:0.5)}
+      startFight(p1Id,p2Id,stageSelect,gameMode!=='local',gameMode==='training'?0.2:0.5)}}
     if(k==='Escape'){gameState=S.CHAR_SELECT;sfxMenu()}
   }else if(gameState===S.STORY_INTRO){
     if(k==='Space'||k==='Enter'){sfxSelect();startFight(saveData.unlocked[0]||'second_coming',storyOpponents[storyLevel],storyStages[storyLevel],true,Math.min(0.3+storyLevel*0.05,0.95));gameMode='story'}
     if(k==='Escape'){gameState=S.MENU;sfxMenu()}
+  }else if(gameState===S.MOB_SMASH){
+    if(mobSmash.gameOver&&(k==='Space'||k==='Enter')){sfxSelect();gameState=S.MENU;menuSelection=0}
+    if(k==='Escape'){if(mobSmash.gameOver){gameState=S.MENU;menuSelection=0}else{gameState=S.PAUSE;menuSelection=0;sfxMenu()}}
   }else if(gameState===S.FIGHTING){
     if(k==='Escape'){gameState=S.PAUSE;menuSelection=0;sfxMenu()}
   }else if(gameState===S.PAUSE){
     if(k==='ArrowUp'){menuSelection=(menuSelection-1+2)%2;sfxMenu()}
     if(k==='ArrowDown'){menuSelection=(menuSelection+1)%2;sfxMenu()}
-    if(k==='Space'||k==='Enter'){sfxSelect();if(menuSelection===0)gameState=S.FIGHTING;else{gameState=S.MENU;menuSelection=0}}
-    if(k==='Escape')gameState=S.FIGHTING;
+    if(k==='Space'||k==='Enter'){sfxSelect();if(menuSelection===0){gameState=gameMode==='mob_smash'?S.MOB_SMASH:S.FIGHTING}else{gameState=S.MENU;menuSelection=0}}
+    if(k==='Escape')gameState=gameMode==='mob_smash'?S.MOB_SMASH:S.FIGHTING;
   }else if(gameState===S.VICTORY){
     if(k==='Space'||k==='Enter'){sfxSelect();
       if(gameMode==='story'){storyLevel++;if(storyLevel>=storyOpponents.length){gameState=S.MENU;menuSelection=0}else gameState=S.STORY_INTRO}
