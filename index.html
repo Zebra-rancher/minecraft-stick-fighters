@@ -1681,49 +1681,73 @@ class Fighter{
         ctx.strokeRect(f.facing*6-2,headY-4,6,6);
 
       }else if(f.id==='hazard'){
-        // HAZARD: Stop-sign shaped head, warning colors, biohazard theme
-        // legs - hazard-striped
-        ctx.fillStyle='#2A5A12';
-        ctx.save();ctx.translate(-4,bodyBot);ctx.rotate(legSwing*0.03);ctx.fillRect(-3,0,6,legLen);ctx.restore();
-        ctx.save();ctx.translate(4,bodyBot);ctx.rotate(-legSwing*0.03);ctx.fillRect(-3,0,6,legLen);ctx.restore();
-        // hazard stripe on legs
-        ctx.fillStyle='#1A3A08';
-        ctx.fillRect(-7,bodyBot+4,6,3);ctx.fillRect(1,bodyBot+4,6,3);
-        ctx.fillRect(-7,bodyBot+10,6,3);ctx.fillRect(1,bodyBot+10,6,3);
-        // boots
-        ctx.fillStyle='#111';
-        ctx.fillRect(-8,bodyBot+legLen-4,7,5);ctx.fillRect(1,bodyBot+legLen-4,7,5);
-        // torso - hazmat suit
-        ctx.fillStyle='#44CC22';ctx.fillRect(-9,bodyTop,18,bodyBot-bodyTop);
-        // hazard stripes on torso
-        ctx.fillStyle='#FFD700';
-        ctx.fillRect(-9,bodyTop+3,18,2);ctx.fillRect(-9,bodyBot-5,18,2);
-        // biohazard symbol on chest
-        ctx.fillStyle='#222';ctx.fillRect(-4,bodyTop+8,8,8);
-        ctx.fillStyle='#FFD700';
-        ctx.beginPath();ctx.arc(0,bodyTop+12,3,0,Math.PI*2);ctx.fill();
-        ctx.fillRect(-1,bodyTop+8,2,3);ctx.fillRect(-3,bodyTop+11,2,2);ctx.fillRect(1,bodyTop+11,2,2);
-        // arms
-        mercArms('#44CC22');
-        // HEAD: STOP SIGN SHAPE (octagon)
-        ctx.fillStyle='#CC0000';
-        ctx.beginPath();
-        const r=11;
-        for(let i=0;i<8;i++){
-          const a=Math.PI*2*i/8-Math.PI/8;
-          const px=Math.cos(a)*r,py=headY+Math.sin(a)*r;
-          i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+        // HAZARD: Warning-sign person icon — dark silhouette, rounded limbs, light outline
+        const outC='#8A9AAA';// light grey outline
+        const fillC='#2D3640';// dark charcoal fill
+        const rad=4;// rounded end radius
+
+        // legs — thick rounded bars
+        ctx.save();ctx.translate(-5,bodyBot);ctx.rotate(legSwing*0.03);
+        ctx.strokeStyle=outC;ctx.lineWidth=2;ctx.fillStyle=fillC;ctx.lineCap='round';ctx.lineJoin='round';
+        ctx.beginPath();ctx.roundRect(-3,0,6,legLen+2,rad);ctx.fill();ctx.stroke();
+        ctx.restore();
+        ctx.save();ctx.translate(5,bodyBot);ctx.rotate(-legSwing*0.03);
+        ctx.strokeStyle=outC;ctx.lineWidth=2;ctx.fillStyle=fillC;
+        ctx.beginPath();ctx.roundRect(-3,0,6,legLen+2,rad);ctx.fill();ctx.stroke();
+        ctx.restore();
+
+        // torso — wide rounded rectangle
+        ctx.fillStyle=fillC;ctx.strokeStyle=outC;ctx.lineWidth=2;
+        ctx.beginPath();ctx.roundRect(-10,bodyTop-2,20,bodyBot-bodyTop+4,5);ctx.fill();ctx.stroke();
+        // subtle gradient highlight on torso
+        const tgr=ctx.createLinearGradient(-8,bodyTop,8,bodyBot);
+        tgr.addColorStop(0,'rgba(255,255,255,0.06)');tgr.addColorStop(0.5,'rgba(255,255,255,0.02)');tgr.addColorStop(1,'rgba(0,0,0,0.05)');
+        ctx.fillStyle=tgr;ctx.beginPath();ctx.roundRect(-10,bodyTop-2,20,bodyBot-bodyTop+4,5);ctx.fill();
+
+        // arms — thick rounded bars (icon style: hang at sides)
+        if(atkAnim==='active'||atkAnim==='startup'){
+          const atk=f.currentAttack;const progress=atkAnim==='startup'?0.5:1;
+          let weapAngle=f.facing*Math.PI*0.3*progress,weapX=f.facing*18*progress,weapY=armBaseY;
+          if(atk.name&&(atk.name.includes('Upper')||atk.name.includes('Sky')||atk.name.includes('Launch'))){weapAngle=-Math.PI*0.6*progress;weapX=f.facing*10;weapY=armBaseY-10}
+          else if(atk.name&&(atk.name.includes('Slam')||atk.name.includes('Drop')||atk.name.includes('Ground')||atk.name.includes('Down'))){weapAngle=Math.PI*0.4*progress;weapX=f.facing*8;weapY=armBaseY+5}
+          // attack arm
+          ctx.fillStyle=fillC;ctx.strokeStyle=outC;ctx.lineWidth=2;
+          ctx.save();ctx.translate(f.facing*10,armBaseY+2);ctx.rotate(weapAngle*0.4);
+          ctx.beginPath();ctx.roundRect(0,-3,f.facing*13,7,rad);ctx.fill();ctx.stroke();ctx.restore();
+          const wType=atk.weaponDraw||f.def.weaponType;if(wType)drawWeapon(wType,weapX,weapY,weapAngle,f.facing,true,atkAnim==='active');
+          // back arm
+          ctx.fillStyle=fillC;ctx.strokeStyle=outC;ctx.lineWidth=2;
+          ctx.beginPath();ctx.roundRect(-f.facing*10-3,armBaseY,7,16,rad);ctx.fill();ctx.stroke();
+        }else if(f.state==='hitstun'){
+          ctx.fillStyle=fillC;ctx.strokeStyle=outC;ctx.lineWidth=2;
+          ctx.beginPath();ctx.roundRect(-12,armBaseY,7,14,rad);ctx.fill();ctx.stroke();
+          ctx.beginPath();ctx.roundRect(5,armBaseY,7,14,rad);ctx.fill();ctx.stroke();
+        }else{
+          const aSwing=Math.sin(f.walkCycle)*0.3;
+          ctx.fillStyle=fillC;ctx.strokeStyle=outC;ctx.lineWidth=2;
+          ctx.save();ctx.translate(-10,armBaseY);ctx.rotate(aSwing);
+          ctx.beginPath();ctx.roundRect(-3,0,7,15,rad);ctx.fill();ctx.stroke();ctx.restore();
+          ctx.save();ctx.translate(10,armBaseY);ctx.rotate(-aSwing);
+          ctx.beginPath();ctx.roundRect(-4,0,7,15,rad);ctx.fill();ctx.stroke();ctx.restore();
+          drawWeapon(f.def.weaponType,f.facing*16,armBaseY+14,0.3,f.facing);
         }
-        ctx.closePath();ctx.fill();
-        // white border
-        ctx.strokeStyle='#FFF';ctx.lineWidth=2;ctx.stroke();
-        // STOP text
-        ctx.fillStyle='#FFF';ctx.font='bold 7px monospace';ctx.textAlign='center';
-        ctx.fillText('STOP',0,headY+3);
-        // gas mask tubes coming down
-        ctx.strokeStyle='#555';ctx.lineWidth=2;
-        ctx.beginPath();ctx.moveTo(-5,headY+8);ctx.lineTo(-7,headY+14);ctx.lineTo(-4,bodyTop+2);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(5,headY+8);ctx.lineTo(7,headY+14);ctx.lineTo(4,bodyTop+2);ctx.stroke();
+
+        // head — round circle with outline (sign-person style)
+        ctx.fillStyle=fillC;ctx.strokeStyle=outC;ctx.lineWidth=2.5;
+        ctx.beginPath();ctx.arc(0,headY,10,0,Math.PI*2);ctx.fill();ctx.stroke();
+        // subtle head highlight
+        ctx.fillStyle='rgba(255,255,255,0.04)';
+        ctx.beginPath();ctx.arc(-2,headY-3,6,0,Math.PI*2);ctx.fill();
+
+        // toxic green glow underneath (shows he's hazardous)
+        ctx.shadowColor='#44CC22';ctx.shadowBlur=12;
+        ctx.strokeStyle='rgba(68,204,34,0.25)';ctx.lineWidth=3;
+        ctx.beginPath();ctx.roundRect(-12,bodyTop-4,24,bodyBot-bodyTop+legLen+8,6);ctx.stroke();
+        ctx.shadowBlur=0;
+        // toxic drip from hand
+        const t=Date.now()/200;
+        ctx.fillStyle=`rgba(68,204,34,${0.4+Math.sin(t)*0.3})`;
+        ctx.beginPath();ctx.arc(f.facing*16,armBaseY+18+Math.sin(t)*2,2+Math.sin(t*2),0,Math.PI*2);ctx.fill();
 
       }else if(f.id==='primal'){
         // PRIMAL: Cave drawing style - rough, scratchy, earthy
