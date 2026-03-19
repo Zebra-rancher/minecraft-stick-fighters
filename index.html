@@ -1640,46 +1640,59 @@ class Fighter{
       };
 
       if(f.id==='ballista'){
-        // BALLISTA: Pixelated/chunky body, like a low-res sprite
-        // legs - pixelated blocks
-        ctx.fillStyle='#3A2A1A';
-        ctx.save();ctx.translate(-5,bodyBot);ctx.rotate(legSwing*0.03);
-        ctx.fillRect(-4,0,4,6);ctx.fillRect(-4,6,4,6);ctx.fillRect(-4,12,5,6);ctx.restore();
-        ctx.save();ctx.translate(5,bodyBot);ctx.rotate(-legSwing*0.03);
-        ctx.fillRect(0,0,4,6);ctx.fillRect(0,6,4,6);ctx.fillRect(-1,12,5,6);ctx.restore();
-        // boots - pixel blocks
-        ctx.fillStyle='#222';
-        ctx.fillRect(-10,bodyBot+legLen-3,8,4);ctx.fillRect(2,bodyBot+legLen-3,8,4);
-        // torso - pixel grid pattern (4x4 pixel blocks)
-        ctx.fillStyle='#8B7355';ctx.fillRect(-8,bodyTop,16,bodyBot-bodyTop);
-        // pixel grid overlay
-        ctx.fillStyle='#7A6345';
-        for(let px=0;px<4;px++)for(let py=0;py<8;py++){
-          if((px+py)%2===0)ctx.fillRect(-8+px*4,bodyTop+py*4,4,4);
+        // BALLISTA: Pixelated stick figure — white head, black stair-stepped pixel limbs
+        const px=4;// pixel block size
+        const bCol='#1A1A2A';// dark body color
+        const oCol='#3A3A4A';// slightly lighter outline tone
+        // Helper: draw a stair-stepped pixel line from (x1,y1) to (x2,y2)
+        function pixLine(x1,y1,x2,y2,col){
+          ctx.fillStyle=col;
+          const steps=Math.max(Math.abs(x2-x1),Math.abs(y2-y1))/px;
+          for(let s=0;s<=steps;s++){
+            const t=steps>0?s/steps:0;
+            const bx=Math.round((x1+(x2-x1)*t)/px)*px;
+            const by=Math.round((y1+(y2-y1)*t)/px)*px;
+            ctx.fillRect(bx-px/2,by-px/2,px,px);
+          }
         }
-        // chest armor (pixelated plates)
-        ctx.fillStyle='#5A4A3A';ctx.fillRect(-7,bodyTop+2,14,8);
-        ctx.fillStyle='#4A3A2A';ctx.fillRect(-5,bodyTop+4,10,4);// darker center
-        // pixel shoulder pads
-        ctx.fillStyle='#5A4A3A';
-        ctx.fillRect(-12,bodyTop-2,5,6);ctx.fillRect(7,bodyTop-2,5,6);
-        ctx.fillRect(-11,bodyTop+4,4,3);ctx.fillRect(7,bodyTop+4,4,3);
-        // arms
-        mercArms('#8B7355');
-        // head - SQUARE pixelated head (key visual: looks like low-res pixel art)
-        ctx.fillStyle='#8B7355';ctx.fillRect(-9,headY-9,18,18);
-        // pixel grid on head
-        ctx.fillStyle='#7A6345';
-        for(let px=0;px<4;px++)for(let py=0;py<4;py++){
-          if((px+py)%2===0)ctx.fillRect(-9+px*4+1,headY-9+py*4+1,4,4);
+        // torso — thick pixel spine
+        pixLine(0,bodyTop+2,0,bodyBot,bCol);
+        pixLine(-px,bodyTop+2,-px,bodyBot,bCol);
+        pixLine(px,bodyTop+2,px,bodyBot,bCol);
+        // legs — stair-stepped outward (walk animation shifts the end points)
+        const lkL=Math.sin(f.walkCycle)*6;const lkR=-lkL;
+        pixLine(-2,bodyBot,-10+lkL,bodyBot+legLen,bCol);
+        pixLine(2,bodyBot,10+lkR,bodyBot+legLen,bCol);
+        // thicken legs
+        pixLine(-2+px,bodyBot,-10+lkL+px,bodyBot+legLen,oCol);
+        pixLine(2-px,bodyBot,10+lkR-px,bodyBot+legLen,oCol);
+        // arms — stair-stepped outward from shoulders
+        if(atkAnim==='active'||atkAnim==='startup'){
+          const atk=f.currentAttack;const progress=atkAnim==='startup'?0.5:1;
+          let weapAngle=f.facing*Math.PI*0.3*progress,weapX=f.facing*18*progress,weapY=armBaseY;
+          if(atk.name&&(atk.name.includes('Upper')||atk.name.includes('Sky')||atk.name.includes('Launch'))){weapAngle=-Math.PI*0.6*progress;weapX=f.facing*10;weapY=armBaseY-10}
+          else if(atk.name&&(atk.name.includes('Slam')||atk.name.includes('Drop'))){weapAngle=Math.PI*0.4*progress;weapX=f.facing*8;weapY=armBaseY+5}
+          // attacking arm pixel line
+          pixLine(f.facing*3,bodyTop+4,f.facing*16,bodyTop+4+f.facing*4*progress,bCol);
+          const wType=atk.weaponDraw||f.def.weaponType;if(wType)drawWeapon(wType,weapX,weapY,weapAngle,f.facing,true,atkAnim==='active');
+          // back arm
+          pixLine(-f.facing*3,bodyTop+4,-f.facing*14,bodyTop+14,bCol);
+        }else if(f.state==='hitstun'){
+          pixLine(-4,bodyTop+4,-14,bodyTop+14,bCol);
+          pixLine(4,bodyTop+4,14,bodyTop+14,bCol);
+        }else{
+          const aSwing=Math.sin(f.walkCycle)*4;
+          pixLine(-3,bodyTop+4,-14-aSwing,bodyTop+16+Math.abs(aSwing),bCol);
+          pixLine(3,bodyTop+4,14+aSwing,bodyTop+16+Math.abs(aSwing),bCol);
+          drawWeapon(f.def.weaponType,f.facing*16,armBaseY+14,0.3,f.facing);
         }
-        // visor/scope (one eye has a red scope lens)
-        ctx.fillStyle='#fff';ctx.fillRect(f.facing*3-2,headY-3,3,3);
-        ctx.fillStyle='#CC0000';ctx.fillRect(f.facing*6-1,headY-3,4,4);// red scope lens
-        ctx.fillStyle='#880000';ctx.fillRect(f.facing*6,headY-2,2,2);// scope pupil
-        // scope frame
-        ctx.strokeStyle='#444';ctx.lineWidth=1;
-        ctx.strokeRect(f.facing*6-2,headY-4,6,6);
+        // head — large white circle with dark outline (matches reference image)
+        ctx.strokeStyle=bCol;ctx.lineWidth=3;
+        ctx.fillStyle='#FFFFFF';
+        ctx.beginPath();ctx.arc(0,headY,11,0,Math.PI*2);ctx.fill();ctx.stroke();
+        // subtle dark shadow on head bottom
+        ctx.fillStyle='rgba(0,0,0,0.08)';
+        ctx.beginPath();ctx.arc(0,headY+2,9,0.2,Math.PI-0.2);ctx.fill();
 
       }else if(f.id==='hazard'){
         // HAZARD: Warning-sign person icon — dark silhouette, rounded limbs, light outline
