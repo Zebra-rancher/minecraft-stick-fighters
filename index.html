@@ -86,7 +86,7 @@ function triggerHitstop(frames){hitstopFrames=Math.max(hitstopFrames,frames)}
 // Floating damage numbers
 let dmgNumbers=[];
 function spawnDmgNumber(x,y,dmg,color){
-  dmgNumbers.push({x,y,dmg:Math.ceil(dmg),color,life:50,maxLife:50,vx:(Math.random()-0.5)*2,vy:-3});
+  dmgNumbers.push({x,y,dmg:typeof dmg==='string'?dmg:Math.ceil(dmg),color,life:50,maxLife:50,vx:(Math.random()-0.5)*2,vy:-3});
 }
 function updateDmgNumbers(){
   for(let i=dmgNumbers.length-1;i>=0;i--){
@@ -184,8 +184,9 @@ function drawSparks(){
 // Smooth health bar tracking
 let smoothHP=[100,100];
 function updateSmoothHP(){
-  if(!fighters||!fighters[0]||!fighters[1])return;
-  for(let i=0;i<2;i++){
+  if(!fighters||!fighters[0])return;
+  for(let i=0;i<Math.min(fighters.length,2);i++){
+    if(!fighters[i])continue;
     const target=fighters[i].hp;
     smoothHP[i]+=(target-smoothHP[i])*0.15;
     if(Math.abs(smoothHP[i]-target)<0.5)smoothHP[i]=target;
