@@ -20,7 +20,7 @@ const W=960,H=540;
 canvas.width=W;canvas.height=H;
 
 // ===== SAVE DATA =====
-let saveData={unlocked:['second_coming','red','blue','green','spider','the_mouse','chosen_one','dark_lord','agent','bedwars'],storyProgress:0,wins:0,bonusUnlocked:[]};
+let saveData={unlocked:['second_coming','red','blue','green','spider','the_mouse','chosen_one','dark_lord','agent','bedwars','steve','creeper','iron_golem'],storyProgress:0,wins:0,bonusUnlocked:[]};
 try{const s=localStorage.getItem('mcfighters2');if(s)saveData=JSON.parse(s)}catch(e){}
 function save(){try{localStorage.setItem('mcfighters2',JSON.stringify(saveData))}catch(e){}}
 
@@ -914,6 +914,54 @@ const CHAR_DEFS={
       airDown:{dmg:14,kb:7,range:55,startup:6,active:5,recover:12,name:'TNT Drop',explosive:true,weaponDraw:'tnt'},
       special:{dmg:4,kb:2,range:45,startup:8,active:120,recover:5,name:'Bed Shield',totem:true,weaponDraw:'bed_block'}
     }
+  },
+  steve:{name:'Steve',color:'#00AAFF',weaponType:'wood_pickaxe',speed:4.0,jumpForce:11,weight:1.1,
+    desc:'The Technical Builder - mine resources to upgrade tools from Wood to Diamond',
+    gimmick:'resourceMining',
+    bonusAttack:{dmg:16,kb:7,range:60,startup:8,active:5,recover:14,name:'Diamond Slash',weaponDraw:'diamond_pickaxe'},
+    attacks:{
+      neutral:{dmg:7,kb:3,range:44,startup:4,active:4,recover:8,name:'Pickaxe Swing',weaponDraw:'wood_pickaxe'},
+      forward:{dmg:10,kb:5,range:160,startup:6,active:4,recover:12,name:'Minecart',projectile:true,projSpeed:8,projColor:'#888',weaponDraw:null},
+      up:{dmg:6,kb:7,range:40,startup:4,active:5,recover:10,name:'Elytra Launch',teleportUp:true,weaponDraw:null},
+      down:{dmg:14,kb:6,range:55,startup:10,active:6,recover:14,name:'TNT Place',explosive:true,weaponDraw:'tnt'},
+      airNeutral:{dmg:6,kb:2,range:42,startup:3,active:4,recover:6,name:'Air Pick',weaponDraw:'wood_pickaxe'},
+      airForward:{dmg:9,kb:4,range:48,startup:4,active:4,recover:9,name:'Sword Lunge',weaponDraw:'diamond_sword'},
+      airUp:{dmg:5,kb:6,range:38,startup:3,active:4,recover:8,name:'Pick Toss',weaponDraw:'wood_pickaxe'},
+      airDown:{dmg:12,kb:5,range:50,startup:5,active:5,recover:11,name:'Anvil Drop',weaponDraw:null},
+      special:{dmg:0,kb:0,range:30,startup:20,active:60,recover:5,name:'Mine/Craft',mine:true,weaponDraw:'wood_pickaxe'}
+    }
+  },
+  creeper:{name:'Creeper',color:'#4CAF50',weaponType:'fists',speed:4.3,jumpForce:11,weight:1.0,
+    desc:'The Pressure Fighter - charge meter fills on damage, at 100% goes Charged (blue aura, faster, bigger booms)',
+    gimmick:'chargeMeter',
+    bonusAttack:{dmg:20,kb:9,range:80,startup:6,active:5,recover:16,name:'Super Explosion',explosive:true,aoe:true,weaponDraw:null},
+    attacks:{
+      neutral:{dmg:6,kb:2,range:40,startup:3,active:4,recover:7,name:'Headbutt',weaponDraw:null},
+      forward:{dmg:11,kb:6,range:55,startup:6,active:5,recover:12,name:'Tackle Charge',charge:true,weaponDraw:null},
+      up:{dmg:8,kb:7,range:42,startup:5,active:4,recover:10,name:'Blast Jump',selfLaunch:true,selfDmg:3,weaponDraw:null},
+      down:{dmg:0,kb:0,range:35,startup:3,active:30,recover:5,name:'Rebels Guard',counter:true,weaponDraw:null},
+      airNeutral:{dmg:7,kb:2,range:38,startup:3,active:4,recover:6,name:'Air Boom',weaponDraw:null},
+      airForward:{dmg:10,kb:5,range:50,startup:5,active:4,recover:10,name:'Dive Bomb',explosive:true,weaponDraw:null},
+      airUp:{dmg:6,kb:6,range:36,startup:3,active:4,recover:8,name:'Gunpowder Burst',weaponDraw:null},
+      airDown:{dmg:14,kb:7,range:55,startup:6,active:5,recover:12,name:'Creeper Drop',explosive:true,aoe:true,weaponDraw:null},
+      special:{dmg:18,kb:8,range:70,startup:14,active:5,recover:18,name:'Self-Destruct',explosive:true,aoe:true,selfDmg:20,weaponDraw:null}
+    }
+  },
+  iron_golem:{name:'Iron Golem',color:'#AAAAAA',weaponType:'fists',speed:2.8,jumpForce:10,weight:1.6,
+    desc:'The Heavyweight Tank - cracking armor shows damage, Down B heals but leaves you vulnerable',
+    gimmick:'crackingArmor',
+    bonusAttack:{dmg:22,kb:10,range:60,startup:10,active:5,recover:18,name:'Golem Smash',shockwave:true,weaponDraw:null},
+    attacks:{
+      neutral:{dmg:14,kb:5,range:50,startup:6,active:5,recover:10,name:'Uppercut Toss',weaponDraw:null},
+      forward:{dmg:16,kb:7,range:55,startup:12,active:6,recover:16,name:'Golem Rush',charge:true,weaponDraw:null},
+      up:{dmg:12,kb:9,range:45,startup:7,active:4,recover:12,name:'Village Guard Leap',teleportUp:true,weaponDraw:null},
+      down:{dmg:0,kb:0,range:0,startup:5,active:180,recover:10,name:'Iron Re-Forge',reforge:true,weaponDraw:null},
+      airNeutral:{dmg:10,kb:3,range:48,startup:4,active:5,recover:8,name:'Iron Swipe',weaponDraw:null},
+      airForward:{dmg:18,kb:8,range:52,startup:7,active:4,recover:14,name:'Iron Slam',weaponDraw:null},
+      airUp:{dmg:10,kb:7,range:42,startup:5,active:4,recover:10,name:'Sky Punch',weaponDraw:null},
+      airDown:{dmg:20,kb:10,range:55,startup:8,active:5,recover:14,name:'Ground Pound',shockwave:true,weaponDraw:null},
+      special:{dmg:25,kb:12,range:65,startup:16,active:5,recover:20,name:'Iron Fist',weaponDraw:null}
+    }
   }
 };
 
@@ -1160,8 +1208,83 @@ const ITEM_DEFS=[
   {name:'Strength Potion',color:'#FF4500',effect:'strength',value:1.5,duration:300,icon:'potion'},
   {name:'Ender Pearl',color:'#9B59B6',effect:'teleport',icon:'pearl'},
   {name:'TNT',color:'#FF0000',effect:'explosive',value:20,icon:'tnt'},
-  {name:'Shield',color:'#888',effect:'shield',duration:240,icon:'shield'}
+  {name:'Shield',color:'#888',effect:'shield',duration:240,icon:'shield'},
+  {name:'Monster Spawner',color:'#225522',effect:'spawner',icon:'spawner'}
 ];
+
+// ===== ASSIST SPIDER NPC =====
+let assistSpiders=[];
+class AssistSpider{
+  constructor(x,y,owner){
+    this.x=x;this.y=y;this.vx=0;this.vy=0;this.owner=owner;
+    this.life=600;// 10 seconds at 60fps
+    this.grounded=false;this.pounceCD=0;this.facing=1;
+    this.size=12;this.wallClimb=false;
+  }
+  update(platforms,fighters){
+    this.life--;if(this.life<=0)return;
+    if(this.pounceCD>0)this.pounceCD--;
+    // find nearest opponent
+    let target=null,nd=9999;
+    fighters.forEach(f=>{if(f!==this.owner){const d=Math.abs(f.x-this.x)+Math.abs(f.y-this.y);if(d<nd){nd=d;target=f}}});
+    if(!target)return;
+    this.facing=target.x>this.x?1:-1;
+    // wall climbing: cling to side walls
+    if(!this.grounded&&(this.x<=15||this.x>=W-15)){
+      this.wallClimb=true;this.vy=-1.5;// climb up
+      this.jumpCount=0;
+    }else{this.wallClimb=false}
+    // gravity
+    if(!this.grounded&&!this.wallClimb){this.vy+=0.5;if(this.vy>10)this.vy=10}
+    // chase target
+    const dx=target.x-this.x;
+    if(Math.abs(dx)>30)this.vx+=(dx>0?0.3:-0.3);
+    this.vx*=0.9;
+    // pounce attack when close
+    if(nd<120&&this.pounceCD<=0&&this.grounded){
+      this.vy=-8;this.vx=this.facing*6;this.pounceCD=90;
+      playSound(400,0.08,'square',0.06);
+    }
+    this.x+=this.vx;this.y+=this.vy;
+    // platform collision
+    this.grounded=false;
+    for(const p of platforms){
+      if(this.vy>=0&&this.y>=p.y&&this.y-this.vy<p.y+5&&this.x>p.x&&this.x<p.x+p.w){
+        this.y=p.y;this.vy=0;this.grounded=true;
+      }
+    }
+    // damage opponents on contact
+    fighters.forEach(f=>{
+      if(f!==this.owner&&f.invincible<=0&&Math.abs(f.x-this.x)<20&&Math.abs(f.y-20-this.y)<25){
+        f.takeDamage(5,(f.x-this.x)*0.3,-3,this.owner);
+        spawnParticles(this.x,this.y,'#333',4,2);
+        this.pounceCD=60;
+      }
+    });
+    // bounds
+    if(this.x<5)this.x=5;if(this.x>W-5)this.x=W-5;
+  }
+  draw(){
+    if(this.life<=0)return;
+    const s=this.size;
+    // body
+    ctx.fillStyle='#333';ctx.fillRect(this.x-s,this.y-s,s*2,s);
+    // 8 legs
+    ctx.strokeStyle='#555';ctx.lineWidth=2;ctx.lineCap='round';
+    const t=Date.now()/150;
+    for(let i=0;i<4;i++){
+      const yOff=this.y-s+2+i*3;const spread=8+i*3;
+      ctx.beginPath();ctx.moveTo(this.x-s,yOff);ctx.lineTo(this.x-s-spread+Math.sin(t+i)*2,yOff+spread*0.4);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(this.x+s,yOff);ctx.lineTo(this.x+s+spread-Math.sin(t+i)*2,yOff+spread*0.4);ctx.stroke();
+    }
+    // eyes
+    ctx.fillStyle='#C00';
+    ctx.fillRect(this.x-4,this.y-s+1,3,2);ctx.fillRect(this.x+1,this.y-s+1,3,2);
+    // life indicator (fading)
+    if(this.life<120){ctx.globalAlpha=this.life/120}
+    ctx.globalAlpha=1;
+  }
+}
 
 // ===== PROJECTILE CLASS =====
 let projectiles=[];
@@ -1221,6 +1344,14 @@ class Fighter{
     this.wallClinging=false;
     this.totemActive=false;this.totemTimer=0;
     this.hasSmash=false;this.championForm=false;this.championTimer=0;
+    // Gimmick state
+    this.toolTier=0; // Steve: 0=wood,1=stone,2=iron,3=diamond
+    this.mineTimer=0; // Steve: mining progress
+    this.chargeMeter=0; // Creeper: 0-100, Arsene at 100
+    this.charged=false; // Creeper: powered up state
+    this.crackLevel=0; // Iron Golem: visual crack stage 0-3
+    this.reforging=false; // Iron Golem: currently healing
+    this.reforgeTimer=0;
   }
 
   getAttack(dir,inAir){
@@ -1357,6 +1488,47 @@ class Fighter{
       }else this.wallClinging=false;
     }else this.wallClinging=false;
 
+    // === GIMMICK UPDATES ===
+    // Steve: Resource Mining - tool tier affects damage
+    if(this.def.gimmick==='resourceMining'){
+      const tierNames=['wood','stone','iron','diamond'];
+      const tierMult=[1,1.2,1.5,2.0];
+      this.strengthMult=Math.max(this.strengthMult,tierMult[this.toolTier]);
+      // Mining in progress (during special)
+      if(this.state==='attack'&&this.currentAttack&&this.currentAttack.mine){
+        this.mineTimer++;
+        if(this.mineTimer>=60&&this.toolTier<3){
+          this.toolTier++;this.mineTimer=0;
+          sfxItem();spawnParticles(this.x,this.y-30,['#8B6914','#888','#CCC','#5DE8E0'][this.toolTier],12,4);
+          spawnDmgNumber(this.x,this.y-60,tierNames[this.toolTier].toUpperCase()+'!','#FFD700');
+        }
+      }else{this.mineTimer=0}
+    }
+    // Creeper: Charge Meter - fills on damage taken, at 100 = powered up
+    if(this.def.gimmick==='chargeMeter'){
+      if(this.charged){
+        this.speedMult=Math.max(this.speedMult,1.4);
+        // blue electric aura particles
+        if(this.animTimer%8===0)spawnParticles(this.x+Math.random()*20-10,this.y-20-Math.random()*30,'#44AAFF',2,1);
+      }
+    }
+    // Iron Golem: Cracking Armor + Re-Forge healing
+    if(this.def.gimmick==='crackingArmor'){
+      // crack level based on HP
+      if(this.hp>75)this.crackLevel=0;
+      else if(this.hp>50)this.crackLevel=1;
+      else if(this.hp>25)this.crackLevel=2;
+      else this.crackLevel=3;
+      // Re-Forge heal (Down B hold)
+      if(this.state==='attack'&&this.currentAttack&&this.currentAttack.reforge){
+        this.reforging=true;this.vx=0;// stationary
+        if(this.animTimer%12===0&&this.hp<this.maxHp){
+          this.hp+=2;spawnParticles(this.x,this.y-20,'#FFD700',2,1);
+          spawnDmgNumber(this.x,this.y-60,'+2','#44FF44');
+        }
+      }else{this.reforging=false}
+    }
+
     // walk cycle
     if(this.grounded&&Math.abs(this.vx)>0.5)this.walkCycle+=0.15;else this.walkCycle=0;
 
@@ -1400,6 +1572,27 @@ class Fighter{
     this.vx=kbx*kbMult;this.vy=kby*kbMult;
     this.hitstunTimer=Math.floor(10+actualDmg*1.5);this.state='hitstun';this.invincible=8;
     this.lastHitBy=attacker;this.gliding=false;
+    // Creeper charge meter: fills when taking damage
+    if(this.def.gimmick==='chargeMeter'){
+      this.chargeMeter=Math.min(100,this.chargeMeter+actualDmg*2.5);
+      if(this.chargeMeter>=100&&!this.charged){
+        this.charged=true;sfxLightning();
+        spawnParticles(this.x,this.y-25,'#44AAFF',20,5);
+        spawnDmgNumber(this.x,this.y-70,'CHARGED!','#44AAFF');
+      }
+    }
+    // Creeper counter (Rebel's Guard) - absorb hit, fill meter faster
+    if(this.state==='attack'&&this.currentAttack&&this.currentAttack.counter){
+      this.chargeMeter=Math.min(100,this.chargeMeter+actualDmg*4);
+      this.hitstunTimer=0;this.state='attack';// don't get stunned during counter
+      spawnParticles(this.x,this.y-20,'#44AAFF',6,2);
+      if(this.chargeMeter>=100&&!this.charged){
+        this.charged=true;sfxLightning();
+        spawnParticles(this.x,this.y-25,'#44AAFF',20,5);
+        spawnDmgNumber(this.x,this.y-70,'CHARGED!','#44AAFF');
+      }
+      return;// counter absorbs the hit
+    }
     sfxHit();shake(Math.min(actualDmg/3,8));spawnParticles(this.x,this.y-20,this.def.color,6,actualDmg/3);
     // Graphics engine effects
     spawnDmgNumber(this.x,this.y-50,actualDmg,actualDmg>=12?'#FF4444':'#FFD700');
@@ -1436,7 +1629,7 @@ class Fighter{
     const armBaseY=-38;
     const lAngle=Math.sin(f.walkCycle)*0.5;
     const isBlocky=f.id==='bedwars';
-    const isMerc=f.id==='ballista'||f.id==='hazard'||f.id==='primal';
+    const isMerc=f.id==='ballista'||f.id==='hazard'||f.id==='primal'||f.id==='steve'||f.id==='creeper'||f.id==='iron_golem';
     const isMob=f.id==='skeleton'||f.id==='spider'||f.id==='enderman';
 
     if(isMob){
@@ -1835,6 +2028,175 @@ class Fighter{
         ctx.fillStyle=caveC;
         ctx.beginPath();ctx.arc(0,headY,8,0,Math.PI*2);ctx.fill();
 
+      }else if(f.id==='steve'){
+        // STEVE: Minecraft player body (blocky, like Bed Wars but with blue shirt + brown pants)
+        const legSwing=Math.sin(f.walkCycle)*6;
+        const tierColors=['#8B6914','#888','#CCC','#5DE8E0'];// wood,stone,iron,diamond
+        const tierC=tierColors[f.toolTier];
+        // legs (blue pants)
+        ctx.fillStyle='#2244AA';
+        ctx.save();ctx.translate(-3,bodyBot);ctx.rotate(legSwing*0.04);ctx.fillRect(-3,0,5,legLen);ctx.restore();
+        ctx.save();ctx.translate(3,bodyBot);ctx.rotate(-legSwing*0.04);ctx.fillRect(-2,0,5,legLen);ctx.restore();
+        // shoes
+        ctx.fillStyle='#555';ctx.fillRect(-7,bodyBot+legLen-3,6,4);ctx.fillRect(1,bodyBot+legLen-3,6,4);
+        // torso (teal shirt)
+        ctx.fillStyle='#44AAAA';ctx.fillRect(-7,bodyTop,14,bodyBot-bodyTop);
+        // arms
+        mercArms('#44AAAA');
+        // head (square, Steve skin)
+        ctx.fillStyle='#C69C6D';ctx.fillRect(-9,headY-9,18,18);
+        // hair (brown top)
+        ctx.fillStyle='#553311';ctx.fillRect(-9,headY-9,18,6);
+        ctx.fillRect(-9,headY-9,3,18);ctx.fillRect(6,headY-9,3,18);
+        // eyes
+        ctx.fillStyle='#FFF';ctx.fillRect(-5,headY-1,4,4);ctx.fillRect(1,headY-1,4,4);
+        ctx.fillStyle='#2244AA';ctx.fillRect(-4,headY,2,3);ctx.fillRect(2,headY,2,3);
+        // nose
+        ctx.fillStyle='#B08050';ctx.fillRect(-1,headY+3,2,2);
+        // tool tier glow around hands
+        if(f.toolTier>0){
+          ctx.shadowColor=tierC;ctx.shadowBlur=8;
+          ctx.fillStyle=tierC;ctx.fillRect(f.facing*14,armBaseY+10,4,4);
+          ctx.shadowBlur=0;
+        }
+        // mining particles when using special
+        if(f.state==='attack'&&f.currentAttack&&f.currentAttack.mine){
+          const t=Date.now()/100;
+          for(let i=0;i<3;i++){
+            ctx.fillStyle=`rgba(139,105,20,${0.3+Math.sin(t+i)*0.2})`;
+            ctx.fillRect(f.facing*10+Math.sin(t+i*2)*8,armBaseY+Math.cos(t+i)*10,4,4);
+          }
+        }
+
+      }else if(f.id==='creeper'){
+        // CREEPER: green blocky body, iconic face, blue aura when charged
+        const legSwing=Math.sin(f.walkCycle)*5;
+        const creeperG=f.charged?'#2288FF':'#4CAF50';
+        const creeperD=f.charged?'#1166CC':'#388E3C';
+        // electric aura when charged
+        if(f.charged){
+          const t=Date.now()/80;
+          ctx.shadowColor='#44AAFF';ctx.shadowBlur=20;
+          ctx.strokeStyle='rgba(68,170,255,0.4)';ctx.lineWidth=2;
+          for(let i=0;i<4;i++){
+            ctx.beginPath();
+            ctx.moveTo(Math.sin(t+i)*14,-50+i*10);
+            ctx.lineTo(Math.sin(t+i+1)*14+Math.random()*6,-45+i*10);
+            ctx.stroke();
+          }
+          ctx.shadowBlur=0;
+        }
+        // 4 short legs
+        ctx.fillStyle=creeperD;
+        ctx.save();ctx.translate(-6,bodyBot);ctx.rotate(legSwing*0.03);ctx.fillRect(-3,0,5,legLen-4);ctx.restore();
+        ctx.save();ctx.translate(-1,bodyBot);ctx.rotate(-legSwing*0.02);ctx.fillRect(-2,0,5,legLen-4);ctx.restore();
+        ctx.save();ctx.translate(3,bodyBot);ctx.rotate(legSwing*0.02);ctx.fillRect(-2,0,5,legLen-4);ctx.restore();
+        ctx.save();ctx.translate(7,bodyBot);ctx.rotate(-legSwing*0.03);ctx.fillRect(-2,0,5,legLen-4);ctx.restore();
+        // torso (tall rectangular)
+        ctx.fillStyle=creeperG;ctx.fillRect(-8,bodyTop-4,16,bodyBot-bodyTop+4);
+        // darker patches
+        ctx.fillStyle=creeperD;ctx.fillRect(-6,bodyTop,4,5);ctx.fillRect(2,bodyTop+6,4,4);
+        // no arms (creepers don't have arms!)
+        // head (square, iconic face)
+        ctx.fillStyle=creeperG;ctx.fillRect(-10,headY-10,20,20);
+        // face - the classic creeper frown
+        ctx.fillStyle='#111';
+        // eyes
+        ctx.fillRect(-7,headY-6,4,5);ctx.fillRect(3,headY-6,4,5);
+        // mouth (frown shape)
+        ctx.fillRect(-2,headY+1,4,2);
+        ctx.fillRect(-4,headY+3,2,3);ctx.fillRect(2,headY+3,2,3);
+        ctx.fillRect(-2,headY+3,4,2);
+        // charge meter glow ring when > 50%
+        if(f.chargeMeter>50&&!f.charged){
+          const pulse=Math.sin(Date.now()/200)*0.2;
+          ctx.strokeStyle=`rgba(68,170,255,${0.2+pulse})`;ctx.lineWidth=2;
+          ctx.beginPath();ctx.arc(0,headY,14,0,Math.PI*2*f.chargeMeter/100);ctx.stroke();
+        }
+        // weapons drawn during attacks
+        if(atkAnim==='active'||atkAnim==='startup'){
+          const atk=f.currentAttack;
+          const wType=atk.weaponDraw||f.def.weaponType;
+          if(wType)drawWeapon(wType,f.facing*16,armBaseY,f.facing*0.4,f.facing,true,atkAnim==='active');
+        }
+
+      }else if(f.id==='iron_golem'){
+        // IRON GOLEM: massive chunky body, iron plates, cracks at damage
+        const legSwing=Math.sin(f.walkCycle)*4;
+        const ironC='#AAAAAA';const ironD='#888888';
+        // legs (thick, stumpy)
+        ctx.fillStyle=ironD;
+        ctx.save();ctx.translate(-5,bodyBot);ctx.rotate(legSwing*0.02);ctx.fillRect(-5,0,9,legLen+2);ctx.restore();
+        ctx.save();ctx.translate(5,bodyBot);ctx.rotate(-legSwing*0.02);ctx.fillRect(-4,0,9,legLen+2);ctx.restore();
+        // torso (wide, bulky)
+        ctx.fillStyle=ironC;ctx.fillRect(-12,bodyTop-4,24,bodyBot-bodyTop+4);
+        // iron plate details
+        ctx.fillStyle=ironD;ctx.fillRect(-10,bodyTop-2,6,8);ctx.fillRect(4,bodyTop-2,6,8);
+        ctx.fillRect(-8,bodyBot-8,16,4);
+        // CRACKING ARMOR visual
+        if(f.crackLevel>=1){
+          ctx.strokeStyle='#555';ctx.lineWidth=1.5;
+          ctx.beginPath();ctx.moveTo(-4,bodyTop+2);ctx.lineTo(-2,bodyTop+12);ctx.lineTo(-5,bodyTop+16);ctx.stroke();
+        }
+        if(f.crackLevel>=2){
+          ctx.beginPath();ctx.moveTo(3,bodyTop);ctx.lineTo(6,bodyTop+10);ctx.lineTo(4,bodyTop+18);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(-8,bodyBot-4);ctx.lineTo(-3,bodyBot+2);ctx.stroke();
+        }
+        if(f.crackLevel>=3){
+          ctx.strokeStyle='#F44';ctx.lineWidth=2;
+          ctx.beginPath();ctx.moveTo(0,bodyTop-2);ctx.lineTo(-3,bodyTop+8);ctx.lineTo(2,bodyTop+16);ctx.lineTo(-1,bodyBot);ctx.stroke();
+          // glowing red cracks
+          ctx.shadowColor='#F44';ctx.shadowBlur=6;
+          ctx.beginPath();ctx.moveTo(-6,bodyTop+5);ctx.lineTo(-2,bodyBot-5);ctx.stroke();
+          ctx.shadowBlur=0;
+        }
+        // arms (massive)
+        if(atkAnim==='active'||atkAnim==='startup'){
+          const atk=f.currentAttack;const progress=atkAnim==='startup'?0.5:1;
+          let weapAngle=f.facing*Math.PI*0.3*progress;
+          ctx.fillStyle=ironC;
+          ctx.save();ctx.translate(f.facing*10,armBaseY);ctx.rotate(weapAngle*0.5);
+          ctx.fillRect(0,-4,f.facing*18,8);ctx.restore();
+          // fist
+          ctx.fillStyle=ironD;ctx.fillRect(f.facing*26*progress-3,armBaseY-3,8,8);
+          ctx.fillRect(-f.facing*10-4,armBaseY-2,8,16);
+        }else if(f.state==='hitstun'){
+          ctx.fillStyle=ironC;ctx.fillRect(-18,armBaseY-2,8,18);ctx.fillRect(10,armBaseY-2,8,18);
+        }else if(f.reforging){
+          // Re-Forge pose: arms in front, sparks
+          ctx.fillStyle=ironC;
+          ctx.fillRect(-6,armBaseY,12,14);// arms together in front
+          ctx.fillStyle='#FFD700';
+          const t=Date.now()/100;
+          for(let i=0;i<3;i++){
+            ctx.fillRect(Math.sin(t+i*2)*8,armBaseY-4+Math.cos(t+i)*6,3,3);
+          }
+          // anvil icon below
+          ctx.fillStyle='#555';ctx.fillRect(-6,bodyBot+legLen-2,12,4);ctx.fillRect(-4,bodyBot+legLen-6,8,4);
+        }else{
+          const aSwing=Math.sin(f.walkCycle)*0.2;
+          ctx.fillStyle=ironC;
+          ctx.save();ctx.translate(-12,armBaseY);ctx.rotate(aSwing);ctx.fillRect(-4,0,8,18);ctx.restore();
+          ctx.save();ctx.translate(12,armBaseY);ctx.rotate(-aSwing);ctx.fillRect(-4,0,8,18);ctx.restore();
+          drawWeapon(f.def.weaponType,f.facing*16,armBaseY+16,0.3,f.facing);
+        }
+        // head (wide, flat top)
+        ctx.fillStyle=ironC;ctx.fillRect(-10,headY-8,20,16);
+        // unibrow
+        ctx.fillStyle='#555';ctx.fillRect(-8,headY-5,16,3);
+        // eyes (dark, set back)
+        ctx.fillStyle='#222';ctx.fillRect(-6,headY-2,4,4);ctx.fillRect(2,headY-2,4,4);
+        // nose (iron golem long nose)
+        ctx.fillStyle='#999';ctx.fillRect(-2,headY+2,4,5);
+        // rose in hand (when idle)
+        if(f.state==='idle'||f.state==='walk'){
+          ctx.fillStyle='#F44';ctx.fillRect(f.facing*16,armBaseY+12,3,5);
+          ctx.fillStyle='#4A4';ctx.fillRect(f.facing*16,armBaseY+17,3,4);
+        }
+        // iron vine patterns on sides
+        ctx.fillStyle='#668866';
+        ctx.fillRect(-11,bodyTop+4,2,10);ctx.fillRect(9,bodyTop+4,2,10);
+
       }else if(f.id==='agent'){
         // AGENT: Clean tactical look, WHITE HEAD, dark suit
         // legs - tactical pants
@@ -2080,6 +2442,17 @@ class GameItem{
     else if(this.def.icon==='pearl'){ctx.beginPath();ctx.arc(this.x,y,7,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(255,255,255,0.4)';ctx.beginPath();ctx.arc(this.x-2,y-2,3,0,Math.PI*2);ctx.fill()}
     else if(this.def.icon==='tnt'){ctx.fillRect(this.x-8,y-8,16,16);ctx.fillStyle='#FFF';ctx.fillRect(this.x-2,y-12,4,5);ctx.fillStyle='#000';ctx.font='8px monospace';ctx.textAlign='center';ctx.fillText('T',this.x,y+3)}
     else if(this.def.icon==='shield'){ctx.beginPath();ctx.moveTo(this.x,y-10);ctx.lineTo(this.x+8,y-5);ctx.lineTo(this.x+6,y+8);ctx.lineTo(this.x,y+12);ctx.lineTo(this.x-6,y+8);ctx.lineTo(this.x-8,y-5);ctx.closePath();ctx.fill()}
+    else if(this.def.icon==='spawner'){
+      // Monster Spawner cage icon
+      ctx.strokeStyle='#225522';ctx.lineWidth=2;ctx.strokeRect(this.x-9,y-9,18,18);
+      // cage bars
+      ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(this.x-9,y);ctx.lineTo(this.x+9,y);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(this.x,y-9);ctx.lineTo(this.x,y+9);ctx.stroke();
+      // spinning mob inside (tiny spider)
+      const t=Date.now()/300;
+      ctx.fillStyle='#333';ctx.fillRect(this.x-3+Math.sin(t)*2,y-3,6,4);
+      ctx.fillStyle='#C00';ctx.fillRect(this.x-2+Math.sin(t)*2,y-2,2,1);ctx.fillRect(this.x+1+Math.sin(t)*2,y-2,2,1);
+    }
     if(this.life<120&&Math.floor(this.life/8)%2===0){ctx.globalAlpha=0.3;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(this.x,y,12,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1}
   }
 }
@@ -2164,7 +2537,10 @@ const FINAL_SMASH_DEFS={
   chosen_one:{name:'Full Power Unleashed',duration:720,type:'transformation'},
   dark_lord:{name:'Virus Corruption',duration:130,type:'cinematic'},
   hacker:{name:'System Override',duration:120,type:'cinematic'},
-  bedwars:{name:'Bed Destruction',duration:110,type:'cinematic'}
+  bedwars:{name:'Bed Destruction',duration:110,type:'cinematic'},
+  steve:{name:'Beacon Blast',duration:120,type:'cinematic'},
+  creeper:{name:'Chain Reaction',duration:110,type:'cinematic'},
+  iron_golem:{name:'Iron Judgement',duration:130,type:'cinematic'}
 };
 
 function triggerFinalSmash(fighter,opponent){
@@ -3619,9 +3995,9 @@ let gameState=S.MENU,menuSelection=0,charSelectP1=0,charSelectP2=1,stageSelect=0
 let gameMode='vs_cpu';
 let fighters=[],currentStage=null,roundTimer=5400,itemSpawnTimer=0,victoryTimer=0;
 let storyLevel=0,menuBlink=0,countdownTimer=0;
-const charOrder=['second_coming','red','blue','green','spider','yellow','purple','skeleton','enderman','king_orange','ballista','hazard','primal','agent','the_mouse','chosen_one','dark_lord','hacker','bedwars'];
-const storyOpponents=['red','blue','green','spider','yellow','skeleton','purple','enderman','king_orange','king_orange','ballista','hazard','primal','agent','the_mouse','chosen_one','dark_lord','hacker','bedwars'];
-const storyStages=[0,3,4,0,1,3,2,4,1,2,0,1,3,4,0,2,1,4,3]; // Plains,Jungle,Village,Plains,Nether,Jungle,End,Village,Nether,End,Plains,Nether,Jungle,End,Plains,End,Nether,End,Jungle
+const charOrder=['second_coming','red','blue','green','spider','yellow','purple','skeleton','enderman','king_orange','steve','creeper','iron_golem','ballista','hazard','primal','agent','the_mouse','chosen_one','dark_lord','hacker','bedwars'];
+const storyOpponents=['red','blue','green','spider','yellow','skeleton','purple','enderman','king_orange','king_orange','steve','creeper','iron_golem','ballista','hazard','primal','agent','the_mouse','chosen_one','dark_lord','hacker','bedwars'];
+const storyStages=[0,3,4,0,1,3,2,4,1,2,0,4,1,0,1,3,4,0,2,1,4,3]; // added Steve(Plains),Creeper(Village),IronGolem(Nether)
 
 // ===== MOB SMASH STATE =====
 let mobSmash={kills:0,wave:1,spawnTimer:0,spawnInterval:120,maxEnemies:3,enemies:[],gameOver:false,
@@ -3636,7 +4012,7 @@ function startMobSmash(charId,stageIdx){
   const sx=stage.platforms[0].x+stage.platforms[0].w/2;
   mobSmash.player=new Fighter(charId,sx,1,1);
   fighters=[mobSmash.player];
-  projectiles=[];activeItems=[];particles=[];plantedBombs=[];stageHazards=[];
+  projectiles=[];activeItems=[];particles=[];plantedBombs=[];stageHazards=[];assistSpiders=[];
   dmgNumbers=[];trails=[];sparks=[];speedLines=[];smoothHP=[100,100];hitstopFrames=0;flashAlpha=0;
   dashState=[{dir:0,timer:0,dashing:false},{dir:0,timer:0,dashing:false}];
   smashBall=null;smashBallTimer=600;finalSmashActive=false;finalSmashData=null;
@@ -3999,6 +4375,60 @@ function drawHUD(){
       const secs=Math.ceil(f.championTimer/60);
       drawText('CHAMPION: '+secs+'s',sx+50,70,10,'#FF44FF');
     }
+    // Steve tool tier indicator
+    if(f.def.gimmick==='resourceMining'){
+      const sx=f.playerNum===1?20:W-170;
+      const tierNames=['WOOD','STONE','IRON','DIAMOND'];
+      const tierColors=['#8B6914','#888','#CCC','#5DE8E0'];
+      const tierC=tierColors[f.toolTier];
+      // tier label
+      drawText(tierNames[f.toolTier],sx+75,62,11,tierC);
+      // tier pips
+      for(let t=0;t<4;t++){
+        ctx.fillStyle=t<=f.toolTier?tierColors[t]:'#333';
+        ctx.fillRect(sx+30+t*25,66,20,5);
+      }
+      // mining progress bar
+      if(f.mineTimer>0){
+        ctx.fillStyle='#333';ctx.fillRect(sx+30,74,100,4);
+        ctx.fillStyle=tierC;ctx.fillRect(sx+30,74,f.mineTimer/60*100,4);
+      }
+    }
+    // Creeper charge meter
+    if(f.def.gimmick==='chargeMeter'){
+      const sx=f.playerNum===1?20:W-170;
+      ctx.fillStyle='#222';ctx.fillRect(sx+30,58,110,12);
+      const meterC=f.charged?'#44AAFF':'#4CAF50';
+      ctx.fillStyle=meterC;ctx.fillRect(sx+31,59,f.chargeMeter/100*108,10);
+      // flash when full
+      if(f.charged){
+        const pulse=Math.sin(Date.now()/150)*0.3;
+        ctx.fillStyle=`rgba(68,170,255,${0.3+pulse})`;ctx.fillRect(sx+31,59,108,10);
+      }
+      ctx.strokeStyle=f.charged?'#44AAFF':'#666';ctx.lineWidth=1;ctx.strokeRect(sx+30,58,110,12);
+      drawText(f.charged?'CHARGED':'Charge: '+Math.floor(f.chargeMeter)+'%',sx+85,67,9,f.charged?'#44AAFF':'#aaa');
+    }
+    // Iron Golem crack level
+    if(f.def.gimmick==='crackingArmor'){
+      const sx=f.playerNum===1?20:W-170;
+      const crackLabels=['PRISTINE','CRACKED','DAMAGED','CRITICAL'];
+      const crackColors=['#AAA','#CCA','#FA4','#F44'];
+      drawText('Armor: '+crackLabels[f.crackLevel],sx+75,62,10,crackColors[f.crackLevel]);
+      // armor segments
+      for(let s=0;s<4;s++){
+        ctx.fillStyle=s>=f.crackLevel?'#AAA':'#444';
+        ctx.fillRect(sx+30+s*25,68,20,5);
+        if(s<f.crackLevel){// crack line
+          ctx.strokeStyle='#F44';ctx.lineWidth=1;
+          ctx.beginPath();ctx.moveTo(sx+35+s*25,68);ctx.lineTo(sx+45+s*25,73);ctx.stroke();
+        }
+      }
+      // reforging indicator
+      if(f.reforging){
+        const pulse=Math.sin(Date.now()/100)*0.3;
+        drawText('REFORGING...',sx+75,80,9,`rgba(255,215,0,${0.7+pulse})`);
+      }
+    }
   });
 }
 
@@ -4169,7 +4599,7 @@ function drawStoryIntro(){
   drawText(`VS ${opp.name.toUpperCase()}`,W/2,140,32,opp.color);
   drawText(opp.desc,W/2,175,16,'#aaa');
   const texts=['Red sharpens his axe for battle!','Blue brews a fresh batch of potions...','Green readies his trident and rod!','Spider crawls from the shadows...','Yellow lights the fuse...','Skeleton takes aim from afar...','Purple spreads his elytra wings!','Enderman appears from thin air...','King Orange activates the Command Block!','FINAL BATTLE - King Orange at full power!',
-    'A mercenary takes position... Ballista aims!','Hazard uncorks a vial of something toxic...','Primal emerges from the wilderness, bone club ready!','Agent drops in from above, pistol drawn!','Alan\'s cursor glides onto the screen...','The Chosen One ignites with legendary power!','The Dark Lord draws twin virus swords!','The Hacker begins rewriting reality...','A Bed Wars player bridges toward you!'];
+    'Steve mines a diamond pickaxe and steps forward!','Creeper hisses... the charge meter begins to fill!','Iron Golem cracks its knuckles, armor gleaming!','A mercenary takes position... Ballista aims!','Hazard uncorks a vial of something toxic...','Primal emerges from the wilderness, bone club ready!','Agent drops in from above, pistol drawn!','Alan\'s cursor glides onto the screen...','The Chosen One ignites with legendary power!','The Dark Lord draws twin virus swords!','The Hacker begins rewriting reality...','A Bed Wars player bridges toward you!'];
   drawText(texts[storyLevel]||'',W/2,230,14,'#777');
   if(storyLevel===9)drawText('BOSS FIGHT!',W/2,270,20,'#FF4444');
   else if(storyLevel===15)drawText('LEGENDARY FIGHT!',W/2,270,20,'#FF6600');
@@ -4194,7 +4624,7 @@ function drawCredits(){
   drawText('Win by depleting HP or knocking off stage',W/2,310,14,'#aaa');
   drawText('Characters',W/2,340,18,'#5DE8E0');
   const charList=['Second Coming','Red','Blue','Green','Spider','Yellow','Purple','Skeleton','Enderman','King Orange',
-   'Ballista','Hazard','Primal','Agent','The Mouse','The Chosen One','The Dark Lord','The Hacker','Bed Wars Player'];
+   'Steve','Creeper','Iron Golem','Ballista','Hazard','Primal','Agent','The Mouse','The Chosen One','The Dark Lord','The Hacker','Bed Wars Player'];
   const clCols=2,clRows=Math.ceil(charList.length/clCols);
   charList.forEach((c,i)=>{
     const col=Math.floor(i/clRows),row=i%clRows;
@@ -4216,7 +4646,7 @@ function startFight(p1Char,p2Char,stageIdx,p2IsCPU=true,cpuDiff=0.5){
   const sx1=stage.platforms[0].x+80,sx2=stage.platforms[0].x+stage.platforms[0].w-80;
   fighters=[new Fighter(p1Char,sx1,1,1),new Fighter(p2Char,sx2,-1,2)];
   fighters[1].ai=p2IsCPU?new AIController(cpuDiff):null;
-  projectiles=[];activeItems=[];particles=[];plantedBombs=[];stageHazards=[];
+  projectiles=[];activeItems=[];particles=[];plantedBombs=[];stageHazards=[];assistSpiders=[];
   dmgNumbers=[];trails=[];sparks=[];speedLines=[];smoothHP=[100,100];hitstopFrames=0;flashAlpha=0;
   dashState=[{dir:0,timer:0,dashing:false},{dir:0,timer:0,dashing:false}];
   hazardTimer=180+Math.floor(Math.random()*120);
@@ -4352,9 +4782,16 @@ function update(){
           if(eff.effect==='shield'){f.shielded=true;f.effectTimers.shield=eff.duration}
           if(eff.effect==='teleport'){const ox=fighters.find(o=>o!==f);if(ox){f.x=ox.x+(Math.random()>0.5?60:-60);spawnParticles(f.x,f.y-20,'#9B59B6',12,3)}}
           if(eff.effect==='explosive'){const ox=fighters.find(o=>o!==f);if(ox&&Math.abs(ox.x-item.x)<80)ox.takeDamage(eff.value,(ox.x-item.x)*0.2,-5,f);spawnParticles(item.x,item.y,'#FF4444',15,5);shake(6)}
+          if(eff.effect==='spawner'){assistSpiders.push(new AssistSpider(f.x,f.y-30,f));spawnParticles(f.x,f.y-20,'#225522',12,4);spawnDmgNumber(f.x,f.y-60,'SPIDER!','#44FF44')}
           sfxItem();activeItems.splice(i,1);
         }
       });
+    }
+
+    // Assist Spiders update
+    for(let i=assistSpiders.length-1;i>=0;i--){
+      assistSpiders[i].update(currentStage.platforms,fighters);
+      if(assistSpiders[i].life<=0){spawnParticles(assistSpiders[i].x,assistSpiders[i].y,'#333',8,3);assistSpiders.splice(i,1)}
     }
 
     // Smash Ball spawning
@@ -4571,6 +5008,7 @@ function draw(){
   }
   else if(gameState===S.FIGHTING||gameState===S.VICTORY){
     drawStage(currentStage);drawHazards();activeItems.forEach(it=>it.draw());
+    assistSpiders.forEach(s=>s.draw());
     if(smashBall&&smashBall.active)smashBall.draw();
     plantedBombs.forEach(b=>b.draw());projectiles.forEach(p=>p.draw());
     // Drop shadows under fighters
